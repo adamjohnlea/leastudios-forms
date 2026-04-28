@@ -1,0 +1,162 @@
+.leastudios-form {
+	max-width: 640px;
+}
+
+.leastudios-form-field {
+	margin-bottom: 16px;
+}
+
+.leastudios-form-field label {
+	display: block;
+	margin-bottom: 4px;
+	font-weight: 600;
+}
+
+.leastudios-form-field input[type="text"],
+.leastudios-form-field input[type="email"],
+.leastudios-form-field input[type="url"],
+.leastudios-form-field input[type="tel"],
+.leastudios-form-field input[type="number"],
+.leastudios-form-field select,
+.leastudios-form-field textarea {
+	width: 100%;
+	padding: 8px 12px;
+	border: 1px solid #8c8f94;
+	border-radius: 4px;
+	font-size: inherit;
+	font-family: inherit;
+	box-sizing: border-box;
+}
+
+.leastudios-form-field textarea {
+	min-height: 120px;
+	resize: vertical;
+}
+
+.leastudios-form-field input:focus,
+.leastudios-form-field select:focus,
+.leastudios-form-field textarea:focus {
+	border-color: #2271b1;
+	box-shadow: 0 0 0 1px #2271b1;
+	outline: none;
+}
+
+.leastudios-form-field input[aria-invalid="true"],
+.leastudios-form-field select[aria-invalid="true"],
+.leastudios-form-field textarea[aria-invalid="true"] {
+	border-color: #d63638;
+	box-shadow: 0 0 0 1px #d63638;
+}
+
+.leastudios-form-field .field-error {
+	display: none;
+	margin-top: 4px;
+	color: #d63638;
+	font-size: 0.875em;
+}
+
+.leastudios-form-field .field-error.visible {
+	display: block;
+}
+
+.leastudios-form-field .required-indicator {
+	color: #d63638;
+	margin-left: 2px;
+}
+
+.leastudios-form-field fieldset {
+	border: none;
+	margin: 0;
+	padding: 0;
+}
+
+.leastudios-form-field fieldset legend {
+	font-weight: 600;
+	margin-bottom: 4px;
+}
+
+.leastudios-form-field fieldset label {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	font-weight: normal;
+	margin-bottom: 4px;
+}
+
+/* Address field. */
+.leastudios-forms-field--address {
+	border: none;
+	margin: 0;
+	padding: 0;
+}
+
+.leastudios-forms-field--address legend {
+	font-weight: 600;
+	margin-bottom: 8px;
+}
+
+.leastudios-address-row {
+	margin-bottom: 12px;
+}
+
+.leastudios-address-row label {
+	display: block;
+	margin-bottom: 4px;
+	font-size: 0.875em;
+	color: #50575e;
+}
+
+.leastudios-address-row input,
+.leastudios-address-row select {
+	width: 100%;
+	padding: 8px 12px;
+	border: 1px solid #8c8f94;
+	border-radius: 4px;
+	font-size: inherit;
+	font-family: inherit;
+	box-sizing: border-box;
+}
+
+.leastudios-address-row input:focus,
+.leastudios-address-row select:focus {
+	border-color: #2271b1;
+	box-shadow: 0 0 0 1px #2271b1;
+	outline: none;
+}
+
+.leastudios-address-row--split {
+	display: flex;
+	gap: 12px;
+}
+
+.leastudios-address-col {
+	flex: 1;
+}
+
+.leastudios-form-submit {
+	margin-top: 20px;
+}
+
+.leastudios-form-submit button {
+	padding: 10px 24px;
+	font-size: inherit;
+	cursor: pointer;
+}
+
+.leastudios-form-submit button:disabled {
+	opacity: 0.6;
+	cursor: not-allowed;
+}
+
+.leastudios-form-success {
+	padding: 14px 18px;
+	background: #edfaef;
+	border-left: 4px solid #00a32a;
+	border-radius: 4px;
+	color: #1d2327;
+}
+
+.leastudios-form-hp {
+	position: absolute;
+	left: -9999px;
+}
