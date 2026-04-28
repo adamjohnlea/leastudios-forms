@@ -14,6 +14,7 @@ defined( 'ABSPATH' ) || exit;
 
 use LEAStudios\Forms\CPT\Form_Post_Type;
 use LEAStudios\Forms\Field\Field_Registry;
+use LEAStudios\Forms\Form\Fields_Validator;
 use LEAStudios\Forms\Form\Form_Repository;
 use LEAStudios\Forms\Form\Form_Settings;
 use WP_Post;
@@ -48,14 +49,27 @@ class Form_Editor {
 	private Field_Registry $field_registry;
 
 	/**
+	 * The fields validator.
+	 *
+	 * @var Fields_Validator
+	 */
+	private Fields_Validator $fields_validator;
+
+	/**
 	 * Constructor.
 	 *
-	 * @param Form_Repository $form_repository The form repository.
-	 * @param Field_Registry  $field_registry  The field registry.
+	 * @param Form_Repository  $form_repository  The form repository.
+	 * @param Field_Registry   $field_registry   The field registry.
+	 * @param Fields_Validator $fields_validator The fields validator.
 	 */
-	public function __construct( Form_Repository $form_repository, Field_Registry $field_registry ) {
-		$this->form_repository = $form_repository;
-		$this->field_registry  = $field_registry;
+	public function __construct(
+		Form_Repository $form_repository,
+		Field_Registry $field_registry,
+		Fields_Validator $fields_validator
+	) {
+		$this->form_repository  = $form_repository;
+		$this->field_registry   = $field_registry;
+		$this->fields_validator = $fields_validator;
 	}
 
 	/**
@@ -371,7 +385,10 @@ class Form_Editor {
 			$fields     = json_decode( $fields_raw, true );
 
 			if ( is_array( $fields ) ) {
-				$this->form_repository->save_fields( $post_id, $fields );
+				$this->form_repository->save_fields(
+					$post_id,
+					$this->fields_validator->validate( $fields )
+				);
 			}
 		}
 

@@ -21,6 +21,7 @@ use LEAStudios\Forms\CPT\Form_Post_Type;
 use LEAStudios\Forms\Database\Migration;
 use LEAStudios\Forms\Entry\Entry_Repository;
 use LEAStudios\Forms\Field\Field_Registry;
+use LEAStudios\Forms\Form\Fields_Validator;
 use LEAStudios\Forms\Form\Form_Repository;
 use LEAStudios\Forms\Integration\Mailer_Integration;
 use LEAStudios\Forms\Notification\Email_Notifier;
@@ -67,7 +68,7 @@ final class Plugin {
 		// Submission pipeline.
 		$validator = new Validator( $field_registry );
 		$notifier  = new Email_Notifier();
-		$handler = new Submission_Handler(
+		$handler   = new Submission_Handler(
 			$validator,
 			$entry_repo,
 			$notifier,
@@ -108,7 +109,8 @@ final class Plugin {
 			$forms_page = new Forms_Page();
 			$forms_page->init();
 
-			$form_editor = new Form_Editor( $form_repo, $field_registry );
+			$fields_validator = new Fields_Validator( $field_registry );
+			$form_editor      = new Form_Editor( $form_repo, $field_registry, $fields_validator );
 			$form_editor->init();
 
 			$entries_page = new Entries_Page( $entry_repo, $form_repo );
