@@ -75,7 +75,7 @@
 			html += '<strong>' + escapeHtml(field.label) + '</strong>';
 			html += '<span class="field-type-badge">' + escapeHtml(field.type) + '</span>';
 			if (field.required) {
-				html += ' <span style="color:#d63638;">*</span>';
+				html += '<span class="field-required-marker" style="color:#d63638;"> *</span>';
 			}
 			html += '</span>';
 			html += '<span class="field-actions">';
@@ -196,7 +196,8 @@
 		});
 
 		document.querySelectorAll('.field-prop').forEach(function (input) {
-			input.addEventListener('change', function () {
+			var evt = input.tagName === 'SELECT' ? 'change' : 'input';
+			input.addEventListener(evt, function () {
 				var idx = parseInt(input.getAttribute('data-index'), 10);
 				var prop = input.getAttribute('data-prop');
 
@@ -208,7 +209,10 @@
 					fieldsData[idx][prop] = input.value;
 				}
 
-				renderFields();
+				if (prop === 'label') {
+					updateFieldRowLabel(idx, input.value);
+				}
+
 				syncData();
 			});
 		});
@@ -218,9 +222,46 @@
 				var idx = parseInt(input.getAttribute('data-index'), 10);
 				var prop = input.getAttribute('data-prop');
 				fieldsData[idx][prop] = input.checked;
+
+				if (prop === 'required') {
+					updateFieldRowRequired(idx, input.checked);
+				}
+
 				syncData();
 			});
 		});
+	}
+
+	function getFieldRow(idx) {
+		return builderContainer.querySelector('.leastudios-forms-builder-field[data-index="' + idx + '"]');
+	}
+
+	function updateFieldRowLabel(idx, value) {
+		var row = getFieldRow(idx);
+		if (!row) return;
+		var strong = row.querySelector('.field-info > strong');
+		if (strong) {
+			strong.textContent = value;
+		}
+	}
+
+	function updateFieldRowRequired(idx, isRequired) {
+		var row = getFieldRow(idx);
+		if (!row) return;
+		var info = row.querySelector('.field-info');
+		if (!info) return;
+		var marker = info.querySelector('.field-required-marker');
+		if (isRequired) {
+			if (!marker) {
+				marker = document.createElement('span');
+				marker.className = 'field-required-marker';
+				marker.style.color = '#d63638';
+				marker.textContent = ' *';
+				info.appendChild(marker);
+			}
+		} else if (marker) {
+			marker.remove();
+		}
 	}
 
 	function bindSettingsEvents() {
@@ -239,6 +280,7 @@
 		document.querySelectorAll('.notification-remove').forEach(function (btn) {
 			btn.addEventListener('click', function () {
 				btn.closest('.leastudios-forms-notification').remove();
+				updateNotificationsWarning();
 			});
 		});
 
@@ -270,7 +312,18 @@
 
 		div.querySelector('.notification-remove').addEventListener('click', function () {
 			div.remove();
+			updateNotificationsWarning();
 		});
+
+		updateNotificationsWarning();
+	}
+
+	function updateNotificationsWarning() {
+		var warning = document.getElementById('leastudios-forms-notifications-warning');
+		var container = document.getElementById('leastudios-forms-notifications');
+		if (!warning || !container) return;
+		var count = container.querySelectorAll('.leastudios-forms-notification').length;
+		warning.style.display = count === 0 ? '' : 'none';
 	}
 
 	function syncData() {

@@ -291,6 +291,16 @@ class Form_Editor {
 
 			<h4><?php esc_html_e( 'Notifications', 'leastudios-forms' ); ?></h4>
 
+			<div
+				id="leastudios-forms-notifications-warning"
+				class="notice notice-warning inline"
+				style="<?php echo empty( $settings->notifications ) ? '' : 'display:none;'; ?>margin:0 0 10px;padding:8px 12px;"
+			>
+				<p style="margin:0;">
+					<?php esc_html_e( 'No notifications configured. Submissions will be saved but no email will be sent.', 'leastudios-forms' ); ?>
+				</p>
+			</div>
+
 			<div id="leastudios-forms-notifications" class="leastudios-forms-notifications">
 				<?php foreach ( $settings->notifications as $index => $notification ) : ?>
 					<div class="leastudios-forms-notification" data-index="<?php echo esc_attr( (string) $index ); ?>">

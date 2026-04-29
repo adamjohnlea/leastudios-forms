@@ -4,7 +4,7 @@ Tags: forms, contact form, form builder, email notifications, submissions
 Requires at least: 6.4
 Tested up to: 6.9
 Requires PHP: 8.1
-Stable tag: 1.0.0
+Stable tag: 1.0.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -46,6 +46,10 @@ Yes. Each form can have multiple notification emails configured with customisabl
 Not currently. The plugin focuses on text-based form fields.
 
 == Changelog ==
+
+= 1.0.1 =
+* Fix: Field edit panel no longer closes when moving focus between inputs in the form builder.
+* New: Form Settings now warns when a form has no notifications configured (submissions would otherwise save silently with no email sent).
 
 = 1.0.0 =
 * Initial release.
