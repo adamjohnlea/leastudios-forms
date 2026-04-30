@@ -40,7 +40,27 @@ final class Number_Field implements Field_Type {
 	 * @return mixed
 	 */
 	public function sanitize( mixed $value ): mixed {
-		return (string) sanitize_text_field( (string) $value );
+		$text = sanitize_text_field( (string) $value );
+
+		// An empty submission stays empty so `validate()` can flag it as
+		// missing for required fields. A non-empty numeric value is
+		// normalised — int when it's whole, float otherwise — so consumers
+		// (entry storage, merge tags, exports) get a real number rather
+		// than the raw input string with its locale-specific separators.
+		if ( '' === $text ) {
+			return '';
+		}
+
+		if ( ! is_numeric( $text ) ) {
+			return $text;
+		}
+
+		// Strip any thousands grouping the input may have, then coerce.
+		$normalised = (float) $text;
+
+		return floor( $normalised ) === $normalised && abs( $normalised ) < PHP_INT_MAX
+			? (int) $normalised
+			: $normalised;
 	}
 
 	/**

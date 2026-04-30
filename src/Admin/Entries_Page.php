@@ -244,8 +244,17 @@ class Entries_Page {
 			'leastudios_forms_entry_action'
 		);
 
-		// Auto-mark as read when viewing.
-		if ( Entry_Status::Unread === $status ) {
+		// Auto-mark as read when viewing — but only if the request carries
+		// the view-entry nonce. This keeps the friendly UX (clicking a row
+		// in the list table marks it read) while ensuring link-prefetchers
+		// or admin-area scanners that hit the URL without the nonce do not
+		// silently mutate state.
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$has_view_nonce = isset( $_GET['_wpnonce'] )
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			&& false !== wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ), 'leastudios_forms_view_entry' );
+
+		if ( $has_view_nonce && Entry_Status::Unread === $status ) {
 			$this->entry_repository->update_status( $entry_id, Entry_Status::Read->value );
 		}
 

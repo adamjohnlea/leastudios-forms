@@ -56,7 +56,12 @@ class Shortcode {
 
 		$this->enqueue_assets( $form_id );
 
-		$html = $this->renderer->render( $form_id );
+		// Pick up errors stashed by the no-JS fallback handler in
+		// Plugin::handle_fallback_submission(). The transient is a
+		// single-use error bag keyed by a token in the redirect URL.
+		$errors = $this->consume_no_js_errors();
+
+		$html = $this->renderer->render( $form_id, $errors );
 
 		/**
 		 * Filter final shortcode output HTML.
@@ -66,6 +71,37 @@ class Shortcode {
 		 * @return string Filtered HTML.
 		 */
 		return apply_filters( 'leastudios_forms_shortcode_output', $html, $form_id );
+	}
+
+	/**
+	 * Read and delete any transient-stashed validation errors left behind
+	 * by the no-JS fallback redirect.
+	 *
+	 * @return array<string, string>
+	 */
+	private function consume_no_js_errors(): array {
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only token consumption; nonce was checked at the original POST.
+		$token = isset( $_GET['leastudios_forms_errors'] ) ? sanitize_key( wp_unslash( (string) $_GET['leastudios_forms_errors'] ) ) : '';
+
+		if ( '' === $token ) {
+			return [];
+		}
+
+		$key    = 'leastudios_forms_errors_' . $token;
+		$errors = get_transient( $key );
+		delete_transient( $key );
+
+		if ( ! is_array( $errors ) ) {
+			return [];
+		}
+
+		// Coerce to (string => string) map: caller renders error text per field name.
+		$out = [];
+		foreach ( $errors as $field_name => $error ) {
+			$out[ (string) $field_name ] = is_string( $error ) ? $error : (string) ( $error[0] ?? '' );
+		}
+
+		return $out;
 	}
 
 	/**

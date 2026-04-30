@@ -29,10 +29,21 @@ class Honeypot {
 	/**
 	 * Check if the honeypot value indicates spam.
 	 *
-	 * @param string $value The submitted honeypot value.
+	 * Treats the field as a presence check: a real browser-rendered form
+	 * always posts the input (with an empty value), so a missing field
+	 * (`null`) is itself a spam signal — typical of bots that POST
+	 * directly without scraping the rendered HTML. Any non-empty value
+	 * means a bot wrote into the hidden field.
+	 *
+	 * @param string|null $value The submitted honeypot value, or null if
+	 *                           the field was absent from the request.
 	 * @return bool True if the submission is spam.
 	 */
-	public function is_spam( string $value ): bool {
+	public function is_spam( ?string $value ): bool {
+		if ( null === $value ) {
+			return true;
+		}
+
 		return '' !== $value;
 	}
 }

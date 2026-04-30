@@ -74,14 +74,22 @@ class Form_Post_Type {
 
 		register_post_type( self::POST_TYPE, $args );
 
+		// Both meta keys hold JSON. The auth_callback gates REST writes on
+		// the same capability the post-edit form does (admin-only via the
+		// CPT cap-map), and the sanitize_callback validates the JSON shape
+		// so a hand-crafted REST request can't bypass Fields_Validator.
+		$json_object_auth = static fn(): bool => current_user_can( 'manage_options' );
+
 		register_post_meta(
 			self::POST_TYPE,
 			self::FIELDS_META_KEY,
 			[
-				'type'         => 'string',
-				'single'       => true,
-				'show_in_rest' => true,
-				'default'      => '[]',
+				'type'              => 'string',
+				'single'            => true,
+				'show_in_rest'      => true,
+				'default'           => '[]',
+				'auth_callback'     => $json_object_auth,
+				'sanitize_callback' => [ self::class, 'sanitize_json_array' ],
 			]
 		);
 
@@ -89,11 +97,59 @@ class Form_Post_Type {
 			self::POST_TYPE,
 			self::SETTINGS_META_KEY,
 			[
-				'type'         => 'string',
-				'single'       => true,
-				'show_in_rest' => true,
-				'default'      => '{}',
+				'type'              => 'string',
+				'single'            => true,
+				'show_in_rest'      => true,
+				'default'           => '{}',
+				'auth_callback'     => $json_object_auth,
+				'sanitize_callback' => [ self::class, 'sanitize_json_object' ],
 			]
 		);
+	}
+
+	/**
+	 * Sanitize a meta value claiming to be a JSON-encoded array.
+	 *
+	 * Decoded with depth cap and re-encoded so any control characters or
+	 * scalar-as-array smuggling cannot survive a round trip. Returns '[]'
+	 * for any input that doesn't decode to an array.
+	 *
+	 * @param mixed $value Raw meta value from the REST request.
+	 * @return string
+	 */
+	public static function sanitize_json_array( mixed $value ): string {
+		if ( ! is_string( $value ) ) {
+			return '[]';
+		}
+
+		$decoded = json_decode( $value, true, 16 );
+
+		if ( ! is_array( $decoded ) ) {
+			return '[]';
+		}
+
+		$encoded = wp_json_encode( $decoded );
+		return false !== $encoded ? $encoded : '[]';
+	}
+
+	/**
+	 * Sanitize a meta value claiming to be a JSON-encoded object.
+	 *
+	 * @param mixed $value Raw meta value from the REST request.
+	 * @return string
+	 */
+	public static function sanitize_json_object( mixed $value ): string {
+		if ( ! is_string( $value ) ) {
+			return '{}';
+		}
+
+		$decoded = json_decode( $value, true, 16 );
+
+		if ( ! is_array( $decoded ) ) {
+			return '{}';
+		}
+
+		$encoded = wp_json_encode( $decoded );
+		return false !== $encoded ? $encoded : '{}';
 	}
 }

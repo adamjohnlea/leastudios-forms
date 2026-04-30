@@ -125,62 +125,67 @@ final class Address_Field implements Field_Type {
 		$show_line2      = ! isset( $field_config['show_line2'] ) || ! empty( $field_config['show_line2'] );
 		$default_country = esc_attr( $field_config['default_country'] ?? 'US' );
 
-		$vals = is_array( $value ) ? $value : [];
-
+		$vals      = is_array( $value ) ? $value : [];
 		$req_attrs = $required ? ' required aria-required="true"' : '';
+		$req_mark  = $required ? ' <span class="required-indicator">*</span>' : '';
 
-		$html  = '<fieldset class="leastudios-forms-field leastudios-forms-field--address" id="' . $id . '">';
-		$html .= '<legend>' . $label;
-		if ( $required ) {
-			$html .= ' <span class="required-indicator">*</span>';
-		}
-		$html .= '</legend>';
-
-		$html .= '<div class="leastudios-address-row">';
-		$html .= '<label for="' . $id . '-line1">' . esc_html__( 'Street Address', 'leastudios-forms' ) . '</label>';
-		$html .= '<input type="text" id="' . $id . '-line1" name="' . $name . '[line1]" value="' . esc_attr( $vals['line1'] ?? '' ) . '"' . $req_attrs . ' />';
-		$html .= '</div>';
-
+		$line2_html = '';
 		if ( $show_line2 ) {
-			$html .= '<div class="leastudios-address-row">';
-			$html .= '<label for="' . $id . '-line2">' . esc_html__( 'Address Line 2', 'leastudios-forms' ) . '</label>';
-			$html .= '<input type="text" id="' . $id . '-line2" name="' . $name . '[line2]" value="' . esc_attr( $vals['line2'] ?? '' ) . '" />';
-			$html .= '</div>';
+			$line2_html = sprintf(
+				'<div class="leastudios-address-row"><label for="%1$s-line2">%2$s</label><input type="text" id="%1$s-line2" name="%3$s[line2]" value="%4$s" /></div>',
+				$id,
+				esc_html__( 'Address Line 2', 'leastudios-forms' ),
+				$name,
+				esc_attr( $vals['line2'] ?? '' )
+			);
 		}
 
-		$html .= '<div class="leastudios-address-row leastudios-address-row--split">';
-
-		$html .= '<div class="leastudios-address-col">';
-		$html .= '<label for="' . $id . '-city">' . esc_html__( 'City', 'leastudios-forms' ) . '</label>';
-		$html .= '<input type="text" id="' . $id . '-city" name="' . $name . '[city]" value="' . esc_attr( $vals['city'] ?? '' ) . '"' . $req_attrs . ' />';
-		$html .= '</div>';
-
-		$html .= '<div class="leastudios-address-col">';
-		$html .= '<label for="' . $id . '-state">' . esc_html__( 'State / Province', 'leastudios-forms' ) . '</label>';
-		$html .= '<input type="text" id="' . $id . '-state" name="' . $name . '[state]" value="' . esc_attr( $vals['state'] ?? '' ) . '"' . $req_attrs . ' />';
-		$html .= '</div>';
-
-		$html .= '</div>';
-
-		$html .= '<div class="leastudios-address-row leastudios-address-row--split">';
-
-		$html .= '<div class="leastudios-address-col">';
-		$html .= '<label for="' . $id . '-zip">' . esc_html__( 'Zip / Postal Code', 'leastudios-forms' ) . '</label>';
-		$html .= '<input type="text" id="' . $id . '-zip" name="' . $name . '[zip]" value="' . esc_attr( $vals['zip'] ?? '' ) . '"' . $req_attrs . ' />';
-		$html .= '</div>';
-
-		$html .= '<div class="leastudios-address-col">';
-		$html .= '<label for="' . $id . '-country">' . esc_html__( 'Country', 'leastudios-forms' ) . '</label>';
-		$html .= '<select id="' . $id . '-country" name="' . $name . '[country]"' . $req_attrs . '>';
-		$html .= $this->render_country_options( $vals['country'] ?? $default_country );
-		$html .= '</select>';
-		$html .= '</div>';
-
-		$html .= '</div>';
-
-		$html .= '</fieldset>';
-
-		return $html;
+		return sprintf(
+			'<fieldset class="leastudios-forms-field leastudios-forms-field--address" id="%1$s">'
+				. '<legend>%2$s%3$s</legend>'
+				. '<div class="leastudios-address-row">'
+					. '<label for="%1$s-line1">%4$s</label>'
+					. '<input type="text" id="%1$s-line1" name="%5$s[line1]" value="%6$s"%7$s />'
+				. '</div>'
+				. '%8$s'
+				. '<div class="leastudios-address-row leastudios-address-row--split">'
+					. '<div class="leastudios-address-col">'
+						. '<label for="%1$s-city">%9$s</label>'
+						. '<input type="text" id="%1$s-city" name="%5$s[city]" value="%10$s"%7$s />'
+					. '</div>'
+					. '<div class="leastudios-address-col">'
+						. '<label for="%1$s-state">%11$s</label>'
+						. '<input type="text" id="%1$s-state" name="%5$s[state]" value="%12$s"%7$s />'
+					. '</div>'
+				. '</div>'
+				. '<div class="leastudios-address-row leastudios-address-row--split">'
+					. '<div class="leastudios-address-col">'
+						. '<label for="%1$s-zip">%13$s</label>'
+						. '<input type="text" id="%1$s-zip" name="%5$s[zip]" value="%14$s"%7$s />'
+					. '</div>'
+					. '<div class="leastudios-address-col">'
+						. '<label for="%1$s-country">%15$s</label>'
+						. '<select id="%1$s-country" name="%5$s[country]"%7$s>%16$s</select>'
+					. '</div>'
+				. '</div>'
+			. '</fieldset>',
+			$id,
+			$label,
+			$req_mark,
+			esc_html__( 'Street Address', 'leastudios-forms' ),
+			$name,
+			esc_attr( $vals['line1'] ?? '' ),
+			$req_attrs,
+			$line2_html,
+			esc_html__( 'City', 'leastudios-forms' ),
+			esc_attr( $vals['city'] ?? '' ),
+			esc_html__( 'State / Province', 'leastudios-forms' ),
+			esc_attr( $vals['state'] ?? '' ),
+			esc_html__( 'Zip / Postal Code', 'leastudios-forms' ),
+			esc_attr( $vals['zip'] ?? '' ),
+			esc_html__( 'Country', 'leastudios-forms' ),
+			$this->render_country_options( $vals['country'] ?? $default_country )
+		);
 	}
 
 	/**

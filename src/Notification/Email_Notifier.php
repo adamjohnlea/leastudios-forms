@@ -30,9 +30,12 @@ class Email_Notifier {
 		$message_ids = [];
 
 		foreach ( $notifications as $notification ) {
-			$to      = $this->replace_merge_tags( $notification['to'] ?? '', $form_id, $field_data, $entry_id );
-			$subject = $this->replace_merge_tags( $notification['subject'] ?? '', $form_id, $field_data, $entry_id );
-			$message = $this->replace_merge_tags( $notification['message'] ?? '', $form_id, $field_data, $entry_id );
+			// Each merge-tag context picks the right escape: HTML body
+			// runs values through esc_html; the email/subject paths strip
+			// CR/LF instead so a malicious value cannot smuggle headers.
+			$to      = $this->replace_merge_tags( $notification['to'] ?? '', $form_id, $field_data, $entry_id, 'email' );
+			$subject = $this->replace_merge_tags( $notification['subject'] ?? '', $form_id, $field_data, $entry_id, 'subject' );
+			$message = $this->replace_merge_tags( $notification['message'] ?? '', $form_id, $field_data, $entry_id, 'html' );
 
 			/**
 			 * Filter the notification message after merge tag replacement.
@@ -51,7 +54,7 @@ class Email_Notifier {
 			$headers = [ 'Content-Type: text/html; charset=UTF-8' ];
 
 			if ( ! empty( $notification['reply_to'] ) ) {
-				$reply_to = $this->replace_merge_tags( $notification['reply_to'], $form_id, $field_data, $entry_id );
+				$reply_to = $this->replace_merge_tags( $notification['reply_to'], $form_id, $field_data, $entry_id, 'email' );
 
 				// Only add Reply-To if the merge tag resolved to a valid email.
 				if ( is_email( $reply_to ) ) {
@@ -110,29 +113,68 @@ class Email_Notifier {
 	 * @param int    $form_id    The form post ID.
 	 * @param array  $field_data The submitted field data.
 	 * @param int    $entry_id   Optional entry ID.
+	 * @param string $context    Merge context: 'html', 'subject', or 'email'.
+	 *                           Drives per-value escaping and whether the
+	 *                           HTML-only `{all_fields}` table is emitted.
 	 * @return string The text with merge tags replaced.
 	 */
-	private function replace_merge_tags( string $text, int $form_id, array $field_data, int $entry_id = 0 ): string {
+	private function replace_merge_tags( string $text, int $form_id, array $field_data, int $entry_id = 0, string $context = 'html' ): string {
 		$form  = get_post( $form_id );
 		$title = $form ? $form->post_title : '';
 
-		$text = str_replace( '{form_title}', $title, $text );
-		$text = str_replace( '{admin_email}', get_option( 'admin_email' ), $text );
-		$text = str_replace( '{site_name}', get_option( 'blogname' ), $text );
+		$escape = self::escape_for_context( $context );
 
-		// Replace individual field tags.
-		foreach ( $field_data as $field_name => $value ) {
-			$display_value = is_array( $value ) ? implode( ', ', $value ) : (string) $value;
-			$text          = str_replace( "{field:{$field_name}}", esc_html( $display_value ), $text );
+		$text = str_replace( '{form_title}', $escape( $title ), $text );
+		$text = str_replace( '{admin_email}', $escape( (string) get_option( 'admin_email' ) ), $text );
+		$text = str_replace( '{site_name}', $escape( (string) get_option( 'blogname' ) ), $text );
+
+		// Resolve `{field:<name>}` tags via a regex callback rather than
+		// per-field str_replace. The earlier loop was vulnerable to
+		// substring collisions when one field name was a prefix of another
+		// (e.g. `email` and `email_alt`); the regex matches the full tag
+		// boundary so each substitution is unambiguous.
+		$text = preg_replace_callback(
+			'/\{field:([a-zA-Z0-9_\-]+)\}/',
+			static function ( array $matches ) use ( $field_data, $escape ): string {
+				$field_name = $matches[1];
+
+				if ( ! array_key_exists( $field_name, $field_data ) ) {
+					return $matches[0];
+				}
+
+				$value         = $field_data[ $field_name ];
+				$display_value = is_array( $value ) ? implode( ', ', $value ) : (string) $value;
+
+				return $escape( $display_value );
+			},
+			$text
+		) ?? $text;
+
+		// `{all_fields}` is an HTML table; in non-HTML contexts (subject,
+		// to/reply-to) the tag is replaced with an empty string so a stray
+		// `{all_fields}` in a subject doesn't dump a markup table into the
+		// header line.
+		if ( 'html' === $context ) {
+			$text = str_replace( '{all_fields}', $this->render_all_fields_html( $field_data ), $text );
+		} else {
+			$text = str_replace( '{all_fields}', '', $text );
 		}
 
-		// Replace {all_fields} with a formatted list.
-		$all_fields_html = '<table style="width:100%;border-collapse:collapse;">';
+		return $text;
+	}
+
+	/**
+	 * Build the HTML `{all_fields}` table for the message body.
+	 *
+	 * @param array<string, mixed> $field_data The submitted field data, keyed by field name.
+	 * @return string
+	 */
+	private function render_all_fields_html( array $field_data ): string {
+		$html = '<table style="width:100%;border-collapse:collapse;">';
 
 		foreach ( $field_data as $field_name => $value ) {
 			$label = ucwords( str_replace( [ '_', '-' ], ' ', $field_name ) );
 
-			// Format address fields — filter empty parts and join cleanly.
 			if ( is_array( $value ) && isset( $value['line1'] ) ) {
 				$parts         = array_filter( array_map( 'trim', $value ) );
 				$display_value = implode( ', ', $parts );
@@ -142,19 +184,35 @@ class Email_Notifier {
 				$display_value = (string) $value;
 			}
 
-			$cell_value = esc_html( $display_value );
-
-			$all_fields_html .= sprintf(
+			$html .= sprintf(
 				'<tr><td style="padding:8px;border:1px solid #ddd;font-weight:bold;">%s</td><td style="padding:8px;border:1px solid #ddd;">%s</td></tr>',
 				esc_html( $label ),
-				$cell_value
+				esc_html( $display_value )
 			);
 		}
 
-		$all_fields_html .= '</table>';
+		$html .= '</table>';
 
-		$text = str_replace( '{all_fields}', $all_fields_html, $text );
+		return $html;
+	}
 
-		return $text;
+	/**
+	 * Pick the value-escape strategy for a merge-tag context.
+	 *
+	 * - `html` runs values through `esc_html` so attacker-controlled field
+	 *   values cannot inject markup into the email body.
+	 * - `subject` and `email` strip CR/LF (and embedded NUL) so a value
+	 *   cannot smuggle additional headers when concatenated into the
+	 *   subject line or used as a recipient.
+	 *
+	 * @param string $context The context name.
+	 * @return callable(string):string
+	 */
+	private static function escape_for_context( string $context ): callable {
+		if ( 'html' === $context ) {
+			return static fn( string $value ): string => esc_html( $value );
+		}
+
+		return static fn( string $value ): string => (string) preg_replace( '/[\r\n\x00]+/', ' ', $value );
 	}
 }

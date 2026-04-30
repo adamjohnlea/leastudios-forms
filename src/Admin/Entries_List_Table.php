@@ -299,11 +299,19 @@ class Entries_List_Table extends WP_List_Table {
 	 * @return string
 	 */
 	protected function column_actions( object $item ): string {
-		$view_url = admin_url(
-			sprintf(
-				'admin.php?page=leastudios-forms-entries&action=view&entry_id=%d',
-				absint( $item->id )
-			)
+		// Nonce-protect the view link so the "auto mark as read on view"
+		// side-effect cannot be triggered by link-prefetchers, security
+		// scanners, or third-party crawlers that visit admin URLs without
+		// an authenticated user click. Without the nonce, render_entry_detail
+		// still shows the entry but skips the write.
+		$view_url = wp_nonce_url(
+			admin_url(
+				sprintf(
+					'admin.php?page=leastudios-forms-entries&action=view&entry_id=%d',
+					absint( $item->id )
+				)
+			),
+			'leastudios_forms_view_entry'
 		);
 
 		return sprintf(
