@@ -236,14 +236,15 @@ class Entry_Repository {
 	public function delete_old_entries( int $days ): int {
 		global $wpdb;
 
-		$table = Migration::get_table_name();
+		$table  = Migration::get_table_name();
+		$cutoff = ( new \DateTimeImmutable( "-{$days} days", new \DateTimeZone( 'UTC' ) ) )->format( 'Y-m-d H:i:s' );
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$result = $wpdb->query(
 			$wpdb->prepare(
 				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-				"DELETE FROM {$table} WHERE created_at < DATE_SUB( NOW(), INTERVAL %d DAY )",
-				$days
+				"DELETE FROM {$table} WHERE created_at < %s",
+				$cutoff
 			)
 		);
 

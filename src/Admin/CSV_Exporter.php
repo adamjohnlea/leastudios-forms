@@ -14,6 +14,7 @@ defined( 'ABSPATH' ) || exit;
 
 use LEAStudios\Forms\Entry\Entry_Repository;
 use LEAStudios\Forms\Form\Form_Repository;
+use LEAStudios\Forms\Shared\Datetime_Util;
 
 /**
  * Handles CSV export of form entries.
@@ -137,7 +138,7 @@ class CSV_Exporter {
 				$row[] = (string) $value;
 			}
 
-			$row[] = $entry->created_at;
+			$row[] = Datetime_Util::format_for_display( $entry->created_at, 'Y-m-d H:i:s' );
 			$row[] = $entry->status;
 
 			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fputcsv

@@ -15,6 +15,7 @@ defined( 'ABSPATH' ) || exit;
 use LEAStudios\Forms\Entry\Entry_Repository;
 use LEAStudios\Forms\Entry\Entry_Status;
 use LEAStudios\Forms\Form\Form_Repository;
+use LEAStudios\Forms\Shared\Datetime_Util;
 use WP_List_Table;
 
 // Load WP_List_Table if not already available.
@@ -286,7 +287,9 @@ class Entries_List_Table extends WP_List_Table {
 	 * @return string
 	 */
 	protected function column_created_at( object $item ): string {
-		return esc_html( $item->created_at );
+		$format = get_option( 'date_format' ) . ' ' . get_option( 'time_format' );
+
+		return esc_html( Datetime_Util::format_for_display( $item->created_at ?? null, $format ) );
 	}
 
 	/**

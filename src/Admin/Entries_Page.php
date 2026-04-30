@@ -15,6 +15,7 @@ defined( 'ABSPATH' ) || exit;
 use LEAStudios\Forms\Entry\Entry_Repository;
 use LEAStudios\Forms\Entry\Entry_Status;
 use LEAStudios\Forms\Form\Form_Repository;
+use LEAStudios\Forms\Shared\Datetime_Util;
 
 /**
  * Manages the Entries submenu page and entry detail view.
@@ -266,7 +267,7 @@ class Entries_Page {
 						</tr>
 						<tr>
 							<th scope="row"><?php esc_html_e( 'Date', 'leastudios-forms' ); ?></th>
-							<td><?php echo esc_html( $entry->created_at ); ?></td>
+							<td><?php echo esc_html( Datetime_Util::format_for_display( $entry->created_at ?? null, get_option( 'date_format' ) . ' ' . get_option( 'time_format' ) ) ); ?></td>
 						</tr>
 						<tr>
 							<th scope="row"><?php esc_html_e( 'IP Address', 'leastudios-forms' ); ?></th>
