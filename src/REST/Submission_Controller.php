@@ -99,16 +99,26 @@ class Submission_Controller extends WP_REST_Controller {
 			);
 		}
 
-		$fields         = $request->get_param( 'fields' );
-		$honeypot_value = $request->get_param( '_leastudios_forms_hp' ) ?? '';
-		$ip             = $this->get_client_ip();
-		$user_agent     = $request->get_header( 'user-agent' ) ?? '';
-		$user_id        = get_current_user_id() ? get_current_user_id() : null;
+		$fields = $request->get_param( 'fields' );
+
+		// Pass the raw honeypot value, or null if the field was absent from
+		// the request body. The honeypot relies on the presence-check to
+		// flag bots that POST without rendering the form.
+		$json_params    = $request->get_json_params();
+		$body_params    = $request->get_body_params();
+		$raw_params     = ! empty( $json_params ) ? $json_params : $body_params;
+		$honeypot_value = array_key_exists( '_leastudios_forms_hp', $raw_params )
+			? sanitize_text_field( (string) $raw_params['_leastudios_forms_hp'] )
+			: null;
+
+		$ip         = $this->get_client_ip();
+		$user_agent = $request->get_header( 'user-agent' ) ?? '';
+		$user_id    = get_current_user_id() ? get_current_user_id() : null;
 
 		$result = $this->submission_handler->handle(
 			$form_id,
 			is_array( $fields ) ? $fields : [],
-			(string) $honeypot_value,
+			$honeypot_value,
 			$ip,
 			$user_agent,
 			$user_id
@@ -138,10 +148,12 @@ class Submission_Controller extends WP_REST_Controller {
 				'required' => true,
 				'type'     => 'object',
 			],
+			// No `default` here so $request->get_param() returns null when
+			// the field is absent — we want the controller to be able to
+			// distinguish "missing" (a bot signal) from "empty" (a human).
 			'_leastudios_forms_hp' => [
 				'required'          => false,
 				'type'              => 'string',
-				'default'           => '',
 				'sanitize_callback' => 'sanitize_text_field',
 			],
 			'_wpnonce'             => [

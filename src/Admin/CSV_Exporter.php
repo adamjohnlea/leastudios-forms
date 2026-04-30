@@ -110,13 +110,15 @@ class CSV_Exporter {
 			wp_die( esc_html__( 'Unable to create export file.', 'leastudios-forms' ) );
 		}
 
-		// Write header row.
+		// Write header row. Header labels are static and translator-supplied
+		// so do not need formula-injection guarding, but we run them through
+		// the same sanitiser to keep one code path.
 		$header_row   = array_values( $field_columns );
 		$header_row[] = __( 'Date', 'leastudios-forms' );
 		$header_row[] = __( 'Status', 'leastudios-forms' );
 
 		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fputcsv
-		fputcsv( $output, $header_row );
+		fputcsv( $output, array_map( [ self::class, 'sanitize_cell' ], $header_row ) );
 
 		// Write data rows.
 		foreach ( $entries as $entry ) {
@@ -135,11 +137,11 @@ class CSV_Exporter {
 					$value = implode( ', ', $value );
 				}
 
-				$row[] = (string) $value;
+				$row[] = self::sanitize_cell( (string) $value );
 			}
 
-			$row[] = Datetime_Util::format_for_display( $entry->created_at, 'Y-m-d H:i:s' );
-			$row[] = $entry->status;
+			$row[] = self::sanitize_cell( Datetime_Util::format_for_display( $entry->created_at, 'Y-m-d H:i:s' ) );
+			$row[] = self::sanitize_cell( (string) $entry->status );
 
 			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fputcsv
 			fputcsv( $output, $row );
@@ -148,5 +150,26 @@ class CSV_Exporter {
 		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose
 		fclose( $output );
 		exit;
+	}
+
+	/**
+	 * Defuse formula-injection on a CSV cell.
+	 *
+	 * Excel and Google Sheets interpret cells whose first character is `=`,
+	 * `+`, `-`, `@`, TAB, or CR as a formula and execute attacker-controlled
+	 * functions when the user opens the file. Prefixing the value with a
+	 * single quote keeps the original text and disarms the formula parser.
+	 *
+	 * `fputcsv` handles RFC 4180 quoting itself, so we don't need to wrap.
+	 *
+	 * @param string $value Raw cell value.
+	 * @return string
+	 */
+	private static function sanitize_cell( string $value ): string {
+		if ( '' !== $value && false !== strpbrk( $value[0], "=+-@\t\r" ) ) {
+			return "'" . $value;
+		}
+
+		return $value;
 	}
 }

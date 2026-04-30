@@ -144,9 +144,17 @@ class Form_Renderer {
 			$form_id
 		);
 
+		// Reject attribute names that don't match the HTML attribute-name
+		// grammar. esc_attr does not prevent a malicious filter from
+		// returning `onclick=alert(1) data-foo` as a single key — restrict
+		// to alphanumerics, dashes, underscores, and colons (for namespaced
+		// attributes like `data-*` and `xml:lang`).
 		$form_attrs_html = '';
 		foreach ( $form_attributes as $attr_name => $attr_value ) {
-			$form_attrs_html .= ' ' . esc_attr( $attr_name ) . '="' . esc_attr( $attr_value ) . '"';
+			if ( ! is_string( $attr_name ) || 1 !== preg_match( '/^[A-Za-z_:][A-Za-z0-9_:.\-]*$/', $attr_name ) ) {
+				continue;
+			}
+			$form_attrs_html .= ' ' . esc_attr( $attr_name ) . '="' . esc_attr( (string) $attr_value ) . '"';
 		}
 
 		ob_start();

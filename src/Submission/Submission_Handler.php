@@ -48,15 +48,15 @@ class Submission_Handler {
 	/**
 	 * Handle a form submission.
 	 *
-	 * @param int      $form_id         The form post ID.
-	 * @param array    $raw_data        The raw submitted data.
-	 * @param string   $honeypot_value  The honeypot field value.
-	 * @param string   $ip              The submitter's IP address.
-	 * @param string   $user_agent      The submitter's user agent.
-	 * @param int|null $user_id         The submitter's user ID.
+	 * @param int         $form_id         The form post ID.
+	 * @param array       $raw_data        The raw submitted data.
+	 * @param string|null $honeypot_value  The honeypot field value (null if the field was absent from the request).
+	 * @param string      $ip              The submitter's IP address.
+	 * @param string      $user_agent      The submitter's user agent.
+	 * @param int|null    $user_id         The submitter's user ID.
 	 * @return array{success: bool, message: string, errors: array}
 	 */
-	public function handle( int $form_id, array $raw_data, string $honeypot_value, string $ip, string $user_agent, ?int $user_id ): array {
+	public function handle( int $form_id, array $raw_data, ?string $honeypot_value, string $ip, string $user_agent, ?int $user_id ): array {
 		/**
 		 * Fires at the start of submission handling, before any validation.
 		 *

@@ -50,6 +50,10 @@ final class Plugin {
 		$migration = new Migration();
 		$migration->maybe_migrate();
 
+		// Translations: load on `init` so other plugins/themes can hook into
+		// the translated strings as soon as they're available.
+		add_action( 'init', [ $this, 'load_textdomain' ] );
+
 		// Register CPT.
 		add_action( 'init', [ Form_Post_Type::class, 'register' ] );
 
@@ -151,6 +155,19 @@ final class Plugin {
 	}
 
 	/**
+	 * Load plugin text domain for translations.
+	 *
+	 * @return void
+	 */
+	public function load_textdomain(): void {
+		load_plugin_textdomain(
+			'leastudios-forms',
+			false,
+			dirname( plugin_basename( LEASTUDIOS_FORMS_FILE ) ) . '/languages'
+		);
+	}
+
+	/**
 	 * Handle no-JS form submission fallback via admin-post.php.
 	 *
 	 * @param Submission_Handler $handler   The submission handler.
@@ -158,29 +175,40 @@ final class Plugin {
 	 * @return void
 	 */
 	private function handle_fallback_submission( Submission_Handler $handler, Form_Repository $form_repo ): void {
-		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce verified in handler.
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce verified below.
 		$form_id = absint( $_POST['form_id'] ?? 0 );
 
 		if ( 0 === $form_id ) {
-			wp_safe_redirect( home_url() );
-			exit;
+			wp_die(
+				esc_html__( 'Form submission is missing the form_id field.', 'leastudios-forms' ),
+				esc_html__( 'Form submission failed', 'leastudios-forms' ),
+				[ 'response' => 400 ]
+			);
 		}
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing
 		$nonce = sanitize_text_field( wp_unslash( $_POST['_wpnonce'] ?? '' ) );
 
 		if ( ! wp_verify_nonce( $nonce, 'leastudios_forms_submit_' . $form_id ) ) {
-			wp_safe_redirect( home_url() );
-			exit;
+			wp_die(
+				esc_html__( 'Security check failed. Please reload the page and resubmit.', 'leastudios-forms' ),
+				esc_html__( 'Form submission failed', 'leastudios-forms' ),
+				[ 'response' => 403 ]
+			);
 		}
 
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- sanitize_fields_recursively walks the array and applies sanitize_text_field per leaf value.
+		$fields = self::sanitize_fields_recursively( (array) wp_unslash( $_POST['fields'] ?? [] ) );
+		// Pass null when the honeypot field is absent from the post body
+		// so Honeypot::is_spam can flag a missing field as a bot signal.
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing
-		$fields = array_map( 'sanitize_text_field', (array) wp_unslash( $_POST['fields'] ?? [] ) );
-		// phpcs:ignore WordPress.Security.NonceVerification.Missing
-		$honeypot_value = sanitize_text_field( wp_unslash( $_POST['_leastudios_forms_hp'] ?? '' ) );
-		$ip             = sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ?? '' ) );
-		$user_agent     = sanitize_text_field( wp_unslash( $_SERVER['HTTP_USER_AGENT'] ?? '' ) );
-		$user_id        = get_current_user_id();
+		$honeypot_value = array_key_exists( '_leastudios_forms_hp', $_POST )
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing
+			? sanitize_text_field( (string) wp_unslash( $_POST['_leastudios_forms_hp'] ) )
+			: null;
+		$ip         = sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ?? '' ) );
+		$user_agent = sanitize_text_field( wp_unslash( $_SERVER['HTTP_USER_AGENT'] ?? '' ) );
+		$user_id    = get_current_user_id();
 
 		$result = $handler->handle(
 			$form_id,
@@ -215,5 +243,31 @@ final class Plugin {
 
 		wp_safe_redirect( add_query_arg( 'leastudios_forms_errors', $token, $referer ) );
 		exit;
+	}
+
+	/**
+	 * Recursively sanitise the no-JS submission `fields` array. Field types
+	 * such as Address use nested arrays (`fields[address][line1]`); a flat
+	 * `array_map( 'sanitize_text_field', … )` collapses each nested array to
+	 * the literal string "Array". This walker preserves shape and applies
+	 * `sanitize_text_field` to every leaf, leaving the per-field sanitiser
+	 * registered on each Field_Type to do final type-aware sanitisation
+	 * inside Submission_Handler.
+	 *
+	 * @param array<int|string, mixed> $input The raw fields payload.
+	 * @return array<int|string, mixed>
+	 */
+	private static function sanitize_fields_recursively( array $input ): array {
+		$out = [];
+
+		foreach ( $input as $key => $value ) {
+			if ( is_array( $value ) ) {
+				$out[ $key ] = self::sanitize_fields_recursively( $value );
+			} else {
+				$out[ $key ] = sanitize_text_field( (string) $value );
+			}
+		}
+
+		return $out;
 	}
 }

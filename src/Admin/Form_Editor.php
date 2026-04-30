@@ -389,10 +389,12 @@ class Form_Editor {
 			return;
 		}
 
-		// Save fields JSON.
+		// Save fields JSON. Cap depth so a deeply-nested payload (the kind
+		// only a hostile actor would post) can't blow the JSON parser's
+		// stack — admin-cap-gated, so this is defense in depth.
 		if ( isset( $_POST['leastudios_forms_fields_data'] ) ) {
 			$fields_raw = wp_unslash( $_POST['leastudios_forms_fields_data'] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-			$fields     = json_decode( $fields_raw, true );
+			$fields     = json_decode( $fields_raw, true, 16 );
 
 			if ( is_array( $fields ) ) {
 				$this->form_repository->save_fields(
