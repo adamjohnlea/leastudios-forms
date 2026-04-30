@@ -96,7 +96,7 @@ class Block {
 	/**
 	 * Render the block on the server side.
 	 *
-	 * @param array $attributes Block attributes.
+	 * @param array<string, mixed> $attributes Block attributes.
 	 * @return string The rendered form HTML.
 	 */
 	public function render_block( array $attributes ): string {
@@ -106,7 +106,7 @@ class Block {
 			return '';
 		}
 
-		$this->enqueue_assets( $form_id );
+		$this->enqueue_assets();
 
 		return $this->renderer->render( $form_id );
 	}
@@ -114,10 +114,9 @@ class Block {
 	/**
 	 * Enqueue frontend CSS and JS assets.
 	 *
-	 * @param int $form_id The form post ID.
 	 * @return void
 	 */
-	private function enqueue_assets( int $form_id ): void {
+	private function enqueue_assets(): void {
 		wp_enqueue_style(
 			'leastudios-forms-frontend',
 			LEASTUDIOS_FORMS_URL . 'assets/css/frontend.css',

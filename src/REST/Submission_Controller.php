@@ -132,7 +132,7 @@ class Submission_Controller extends WP_REST_Controller {
 	/**
 	 * Get the endpoint arguments definition.
 	 *
-	 * @return array The args schema.
+	 * @return array<string, array<string, mixed>> The args schema (per-arg shape understood by register_rest_route).
 	 */
 	private function get_endpoint_args(): array {
 		return [

@@ -20,11 +20,11 @@ class Email_Notifier {
 	/**
 	 * Send notifications for a form submission.
 	 *
-	 * @param int   $form_id       The form post ID.
-	 * @param int   $entry_id      The entry ID.
-	 * @param array $field_data    The submitted field data.
-	 * @param array $notifications Array of notification configurations.
-	 * @return array Array of SES message IDs captured from sent emails.
+	 * @param int                                                                                $form_id       The form post ID.
+	 * @param int                                                                                $entry_id      The entry ID.
+	 * @param array<string, mixed>                                                               $field_data    The submitted field data, keyed by field name.
+	 * @param array<int, array{to: string, subject: string, message: string, reply_to?: string}> $notifications Notification configurations to dispatch.
+	 * @return array<int, string> SES message IDs captured from sent emails.
 	 */
 	public function send( int $form_id, int $entry_id, array $field_data, array $notifications ): array {
 		$message_ids = [];
@@ -109,13 +109,13 @@ class Email_Notifier {
 	/**
 	 * Replace merge tags in a string.
 	 *
-	 * @param string $text       The text containing merge tags.
-	 * @param int    $form_id    The form post ID.
-	 * @param array  $field_data The submitted field data.
-	 * @param int    $entry_id   Optional entry ID.
-	 * @param string $context    Merge context: 'html', 'subject', or 'email'.
-	 *                           Drives per-value escaping and whether the
-	 *                           HTML-only `{all_fields}` table is emitted.
+	 * @param string               $text       The text containing merge tags.
+	 * @param int                  $form_id    The form post ID.
+	 * @param array<string, mixed> $field_data The submitted field data, keyed by field name.
+	 * @param int                  $entry_id   Optional entry ID.
+	 * @param string               $context    Merge context: 'html', 'subject', or 'email'.
+	 *                                         Drives per-value escaping and whether the
+	 *                                         HTML-only `{all_fields}` table is emitted.
 	 * @return string The text with merge tags replaced.
 	 */
 	private function replace_merge_tags( string $text, int $form_id, array $field_data, int $entry_id = 0, string $context = 'html' ): string {

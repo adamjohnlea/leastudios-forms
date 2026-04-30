@@ -22,11 +22,11 @@ class Entry_Repository {
 	/**
 	 * Create a new entry.
 	 *
-	 * @param int         $form_id    The form post ID.
-	 * @param array       $field_data The submitted field data.
-	 * @param string|null $ip         The submitter's IP address.
-	 * @param string|null $user_agent The submitter's user agent.
-	 * @param int|null    $user_id    The submitter's user ID.
+	 * @param int                  $form_id    The form post ID.
+	 * @param array<string, mixed> $field_data The submitted field data, keyed by field name.
+	 * @param string|null          $ip         The submitter's IP address.
+	 * @param string|null          $user_agent The submitter's user agent.
+	 * @param int|null             $user_id    The submitter's user ID.
 	 * @return int The new entry ID.
 	 */
 	public function create( int $form_id, array $field_data, ?string $ip, ?string $user_agent, ?int $user_id ): int {
@@ -83,7 +83,7 @@ class Entry_Repository {
 	 * @param int         $per_page Number of entries per page.
 	 * @param int|null    $form_id  Optional form ID filter.
 	 * @param string|null $status   Optional status filter.
-	 * @return array Array of entry objects.
+	 * @return array<int, \stdClass> Wpdb-hydrated entry objects.
 	 */
 	public function get_entries( int $page, int $per_page, ?int $form_id = null, ?string $status = null ): array {
 		global $wpdb;
@@ -107,14 +107,14 @@ class Entry_Repository {
 		$values[]     = $per_page;
 		$values[]     = $offset;
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare --$where_clause carries 0/1/2 dynamic placeholders, $values matches.
 		return $wpdb->get_results(
 			$wpdb->prepare(
-				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 				"SELECT * FROM {$table} {$where_clause} ORDER BY created_at DESC LIMIT %d OFFSET %d",
 				...$values
 			)
 		);
+		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
 	}
 
 	/**
@@ -144,14 +144,14 @@ class Entry_Repository {
 		$where_clause = ! empty( $where ) ? 'WHERE ' . implode( ' AND ', $where ) : '';
 
 		if ( ! empty( $values ) ) {
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare --$where_clause carries 1+ dynamic placeholders, $values matches.
 			return (int) $wpdb->get_var(
 				$wpdb->prepare(
-					// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 					"SELECT COUNT(*) FROM {$table} {$where_clause}",
 					...$values
 				)
 			);
+			// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
 		}
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
@@ -185,8 +185,8 @@ class Entry_Repository {
 	/**
 	 * Update an entry's notification message IDs.
 	 *
-	 * @param int   $id          The entry ID.
-	 * @param array $message_ids Array of message IDs.
+	 * @param int                $id          The entry ID.
+	 * @param array<int, string> $message_ids List of SES message IDs persisted as JSON.
 	 * @return bool Whether the update succeeded.
 	 */
 	public function update_message_ids( int $id, array $message_ids ): bool {
@@ -255,7 +255,7 @@ class Entry_Repository {
 	 * Get all entries for a form (for export).
 	 *
 	 * @param int $form_id The form post ID.
-	 * @return array Array of entry objects.
+	 * @return array<int, \stdClass> Wpdb-hydrated entry objects.
 	 */
 	public function get_entries_for_export( int $form_id ): array {
 		global $wpdb;

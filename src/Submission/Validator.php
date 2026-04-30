@@ -31,9 +31,9 @@ class Validator {
 	/**
 	 * Validate submitted data against field configurations.
 	 *
-	 * @param array $fields_config  Array of field configuration arrays.
-	 * @param array $submitted_data Submitted data keyed by field name.
-	 * @return array Array of errors keyed by field name. Empty if valid.
+	 * @param array<int, array<string, mixed>> $fields_config  Field configurations to check against.
+	 * @param array<string, mixed>             $submitted_data Submitted data keyed by field name.
+	 * @return array<string, string> Errors keyed by field name. Empty if valid.
 	 */
 	public function validate( array $fields_config, array $submitted_data ): array {
 		$errors = [];
@@ -49,7 +49,10 @@ class Validator {
 
 			$required = ! empty( $field_config['required'] );
 
-			if ( $required && ( '' === $value || null === $value || ( is_array( $value ) && empty( $value ) ) ) ) {
+			// $value can't be null here — line 44 does `?? ''` on the lookup. Empty
+			// string and empty array are the two "missing required" shapes we
+			// flag.
+			if ( $required && ( '' === $value || ( is_array( $value ) && empty( $value ) ) ) ) {
 				$label           = $field_config['label'] ?? $name;
 				$errors[ $name ] = sprintf(
 					/* translators: %s: field label */

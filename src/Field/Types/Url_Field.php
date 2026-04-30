@@ -46,8 +46,8 @@ final class Url_Field implements Field_Type {
 	/**
 	 * {@inheritDoc}
 	 *
-	 * @param mixed $value        The value to validate.
-	 * @param array $field_config The field configuration.
+	 * @param mixed                $value        The value to validate.
+	 * @param array<string, mixed> $field_config The field configuration.
 	 * @return true|string
 	 */
 	public function validate( mixed $value, array $field_config ): true|string {
@@ -75,8 +75,8 @@ final class Url_Field implements Field_Type {
 	/**
 	 * {@inheritDoc}
 	 *
-	 * @param array $field_config The field configuration.
-	 * @param mixed $value        The current value.
+	 * @param array<string, mixed> $field_config The field configuration.
+	 * @param mixed                $value        The current value.
 	 * @return string
 	 */
 	public function render( array $field_config, mixed $value = null ): string {
