@@ -20,13 +20,13 @@ class Form_Settings {
 	/**
 	 * Constructor.
 	 *
-	 * @param string $success_message  Message shown on successful submission.
-	 * @param string $redirect_url     URL to redirect to after submission.
-	 * @param array  $notifications    Email notification configurations.
-	 * @param bool   $honeypot_enabled Whether honeypot spam protection is enabled.
-	 * @param int    $rate_limit       Max submissions per window.
-	 * @param int    $rate_limit_window Rate limit window in seconds.
-	 * @param string $submit_button_text Submit button label.
+	 * @param string                                                                            $success_message    Message shown on successful submission.
+	 * @param string                                                                            $redirect_url       URL to redirect to after submission.
+	 * @param array<int, array{to: string, subject: string, message: string, reply_to: string}> $notifications      Email notification configurations.
+	 * @param bool                                                                              $honeypot_enabled   Whether honeypot spam protection is enabled.
+	 * @param int                                                                               $rate_limit         Max submissions per window.
+	 * @param int                                                                               $rate_limit_window  Rate limit window in seconds.
+	 * @param string                                                                            $submit_button_text Submit button label.
 	 */
 	public function __construct(
 		public readonly string $success_message = 'Thank you for your submission.',
@@ -78,7 +78,7 @@ class Form_Settings {
 	/**
 	 * Convert to array for JSON storage.
 	 *
-	 * @return array The settings as an array.
+	 * @return array<string, mixed> The settings as an array suitable for `wp_json_encode()`.
 	 */
 	public function to_array(): array {
 		return [

@@ -12,8 +12,6 @@ namespace LEAStudios\Forms\Integration;
 // Prevent direct access.
 defined( 'ABSPATH' ) || exit;
 
-use LEAStudios\Forms\Entry\Entry_Repository;
-
 /**
  * Provides delivery status lookups and display for the leaStudios Mailer plugin.
  */
@@ -31,15 +29,6 @@ class Mailer_Integration {
 		'bounced'    => '#d63638',
 		'complained' => '#dba617',
 	];
-
-	/**
-	 * Constructor.
-	 *
-	 * @param Entry_Repository $entry_repository The entry repository.
-	 */
-	public function __construct(
-		private readonly Entry_Repository $entry_repository,
-	) {}
 
 	/**
 	 * Initialise hooks (admin only).
@@ -62,8 +51,8 @@ class Mailer_Integration {
 	/**
 	 * Get delivery statuses for a set of SES message IDs.
 	 *
-	 * @param array $message_ids Array of SES message IDs.
-	 * @return array Array of associative arrays with message_id, status, and error_message keys.
+	 * @param array<int, string> $message_ids List of SES message IDs to look up.
+	 * @return array<int, array{message_id: string, status: string, error_message: string}> Status rows from the mailer log.
 	 */
 	public function get_delivery_statuses( array $message_ids ): array {
 		if ( empty( $message_ids ) ) {
@@ -75,15 +64,15 @@ class Mailer_Integration {
 		$table        = $wpdb->prefix . 'leastudios_mailer_log';
 		$placeholders = implode( ', ', array_fill( 0, count( $message_ids ), '%s' ) );
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- $placeholders contains N '%s' tokens matching count($message_ids).
 		$results = $wpdb->get_results(
 			$wpdb->prepare(
-				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 				"SELECT message_id, status, error_message FROM {$table} WHERE message_id IN ( {$placeholders} )",
 				...$message_ids
 			),
 			ARRAY_A
 		);
+		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
 
 		if ( ! is_array( $results ) ) {
 			return [];

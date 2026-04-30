@@ -42,12 +42,14 @@ class Forms_Page {
 	 * Add the top-level admin menu page.
 	 *
 	 * WordPress handles the CPT screens automatically because the CPT
-	 * is registered with `show_in_menu => 'leastudios-forms'`.
+	 * is registered with `show_in_menu => 'leastudios-forms'`. Wired as
+	 * an `admin_menu` action callback — return value is intentionally
+	 * void to match the action contract.
 	 *
-	 * @return string The hook suffix for the page.
+	 * @return void
 	 */
-	public function add_menu_page(): string {
-		$hook_suffix = add_menu_page(
+	public function add_menu_page(): void {
+		add_menu_page(
 			__( 'leaStudios Forms', 'leastudios-forms' ),
 			__( 'Forms', 'leastudios-forms' ),
 			self::CAPABILITY,
@@ -56,7 +58,5 @@ class Forms_Page {
 			'dashicons-feedback',
 			30
 		);
-
-		return (string) $hook_suffix;
 	}
 }

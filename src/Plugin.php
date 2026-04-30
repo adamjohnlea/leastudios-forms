@@ -128,7 +128,7 @@ final class Plugin {
 
 			// Mailer integration.
 			if ( Suite_Detector::is_active( 'leastudios-mailer' ) ) {
-				$mailer_integration = new Mailer_Integration( $entry_repo );
+				$mailer_integration = new Mailer_Integration();
 				$mailer_integration->init();
 			}
 		}

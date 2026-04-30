@@ -42,8 +42,8 @@ interface Field_Type {
 	/**
 	 * Validate a submitted value.
 	 *
-	 * @param mixed $value        The sanitized value.
-	 * @param array $field_config The field configuration.
+	 * @param mixed                $value        The sanitized value.
+	 * @param array<string, mixed> $field_config The field configuration.
 	 * @return true|string True if valid, or an error message string.
 	 */
 	public function validate( mixed $value, array $field_config ): true|string;
@@ -51,8 +51,8 @@ interface Field_Type {
 	/**
 	 * Render the field HTML.
 	 *
-	 * @param array $field_config The field configuration.
-	 * @param mixed $value        Current value (for repopulation).
+	 * @param array<string, mixed> $field_config The field configuration.
+	 * @param mixed                $value        Current value (for repopulation).
 	 * @return string The field HTML.
 	 */
 	public function render( array $field_config, mixed $value = null ): string;

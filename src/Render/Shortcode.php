@@ -38,7 +38,7 @@ class Shortcode {
 	/**
 	 * Handle the shortcode output.
 	 *
-	 * @param array $atts Shortcode attributes.
+	 * @param array<string, mixed> $atts Shortcode attributes.
 	 * @return string The rendered form HTML.
 	 */
 	public function handle( array $atts ): string {
@@ -54,7 +54,7 @@ class Shortcode {
 			return '';
 		}
 
-		$this->enqueue_assets( $form_id );
+		$this->enqueue_assets();
 
 		// Pick up errors stashed by the no-JS fallback handler in
 		// Plugin::handle_fallback_submission(). The transient is a
@@ -107,10 +107,9 @@ class Shortcode {
 	/**
 	 * Enqueue frontend CSS and JS assets.
 	 *
-	 * @param int $form_id The form post ID.
 	 * @return void
 	 */
-	private function enqueue_assets( int $form_id ): void {
+	private function enqueue_assets(): void {
 		wp_enqueue_style(
 			'leastudios-forms-frontend',
 			LEASTUDIOS_FORMS_URL . 'assets/css/frontend.css',

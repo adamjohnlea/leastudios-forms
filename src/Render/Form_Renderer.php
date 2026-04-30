@@ -99,9 +99,9 @@ class Form_Renderer {
 	/**
 	 * Render a form by its post ID.
 	 *
-	 * @param int   $form_id    The form post ID.
-	 * @param array $errors     Validation errors keyed by field name.
-	 * @param array $old_values Previously submitted values for repopulation.
+	 * @param int                   $form_id    The form post ID.
+	 * @param array<string, string> $errors     Validation errors keyed by field name.
+	 * @param array<string, mixed>  $old_values Previously submitted values for repopulation.
 	 * @return string The complete form HTML.
 	 */
 	public function render( int $form_id, array $errors = [], array $old_values = [] ): string {

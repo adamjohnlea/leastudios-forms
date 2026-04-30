@@ -39,7 +39,7 @@ class Form_Repository {
 	 * Get the field definitions for a form.
 	 *
 	 * @param int $form_id The form post ID.
-	 * @return array Array of field configuration arrays.
+	 * @return array<int, array<string, mixed>> Field configurations as decoded from the FIELDS_META_KEY JSON blob.
 	 */
 	public function get_fields( int $form_id ): array {
 		$json = get_post_meta( $form_id, Form_Post_Type::FIELDS_META_KEY, true );
@@ -56,8 +56,8 @@ class Form_Repository {
 	/**
 	 * Save field definitions for a form.
 	 *
-	 * @param int   $form_id The form post ID.
-	 * @param array $fields  Array of field configuration arrays.
+	 * @param int                              $form_id The form post ID.
+	 * @param array<int, array<string, mixed>> $fields  Field configurations to encode as JSON.
 	 * @return bool Whether the update succeeded.
 	 */
 	public function save_fields( int $form_id, array $fields ): bool {
