@@ -167,4 +167,39 @@ class SubmissionHandlerTest extends TestCase {
 		$this->assertFalse( $result['success'] );
 		$this->assertArrayHasKey( 'email', $result['errors'] );
 	}
+
+	public function test_stores_entry_and_fires_hooks(): void {
+		$form_id = $this->create_form(
+			[
+				[
+					'name' => 'message',
+					'type' => 'text',
+				],
+			],
+			new Form_Settings( success_message: 'Thanks!' )
+		);
+
+		$fired = false;
+
+		add_action(
+			'leastudios_forms_submission_created',
+			function () use ( &$fired ): void {
+				$fired = true;
+			}
+		);
+
+		$result = $this->handler->handle(
+			$form_id,
+			[ 'message' => 'Hello there' ],
+			'',
+			'203.0.113.5',
+			'PHPUnit',
+			null
+		);
+
+		$this->assertTrue( $result['success'] );
+		$this->assertSame( 'Thanks!', $result['message'] );
+		$this->assertTrue( $fired );
+		$this->assertSame( 1, $this->entry_repo->get_total_count( $form_id ) );
+	}
 }
