@@ -25,8 +25,9 @@ class RateLimiterTest extends TestCase {
 	}
 
 	public function test_allows_submissions_under_the_limit(): void {
-		$this->assertTrue( $this->limiter->check( '203.0.113.1', 1, 3, 60 ) );
-		$this->assertTrue( $this->limiter->check( '203.0.113.1', 1, 3, 60 ) );
+		$this->assertTrue( $this->limiter->check( '203.0.113.1', 1, 2, 60 ) );
+		$this->assertTrue( $this->limiter->check( '203.0.113.1', 1, 2, 60 ) );
+		$this->assertFalse( $this->limiter->check( '203.0.113.1', 1, 2, 60 ) );
 	}
 
 	public function test_blocks_once_the_limit_is_reached(): void {

@@ -40,7 +40,9 @@ class HoneypotTest extends TestCase {
 		$html = $this->honeypot->render();
 
 		$this->assertStringContainsString( 'name="_leastudios_forms_hp"', $html );
+		$this->assertStringContainsString( 'type="text"', $html );
 		$this->assertStringContainsString( 'tabindex="-1"', $html );
 		$this->assertStringContainsString( 'aria-hidden="true"', $html );
+		$this->assertStringContainsString( 'autocomplete="off"', $html );
 	}
 }
