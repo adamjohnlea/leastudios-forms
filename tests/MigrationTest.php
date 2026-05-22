@@ -85,9 +85,12 @@ class MigrationTest extends TestCase {
 		update_option(
 			'leastudios_forms_options',
 			[
-				'entry_retention_days'   => 90,
-				'stripe_secret_key'      => 'sk_test_xxx',
-				'stripe_publishable_key' => 'pk_test_xxx',
+				'entry_retention_days'    => 90,
+				'stripe_test_mode'        => true,
+				'stripe_publishable_key'  => 'pk_test_xxx',
+				'stripe_secret_key'       => 'sk_test_xxx',
+				'stripe_webhook_secret'   => 'whsec_xxx',
+				'stripe_default_currency' => 'usd',
 			]
 		);
 		update_option( self::SCHEMA_OPTION, 2 );
@@ -102,8 +105,11 @@ class MigrationTest extends TestCase {
 		}
 
 		$options = get_option( 'leastudios_forms_options' );
-		$this->assertArrayNotHasKey( 'stripe_secret_key', $options );
-		$this->assertArrayNotHasKey( 'stripe_publishable_key', $options );
+
+		foreach ( [ 'stripe_test_mode', 'stripe_publishable_key', 'stripe_secret_key', 'stripe_webhook_secret', 'stripe_default_currency' ] as $stripe_key ) {
+			$this->assertArrayNotHasKey( $stripe_key, $options, "Stripe key {$stripe_key} should have been removed." );
+		}
+
 		$this->assertSame( 90, $options['entry_retention_days'] );
 	}
 }
