@@ -94,4 +94,18 @@ class SubmissionHandlerTest extends TestCase {
 		$this->assertFalse( $result['success'] );
 		$this->assertSame( 'Spam detected.', $result['message'] );
 	}
+
+	public function test_rejects_unknown_form(): void {
+		$result = $this->handler->handle(
+			999999,
+			[ 'message' => 'Hello' ],
+			'',
+			'203.0.113.2',
+			'PHPUnit',
+			null
+		);
+
+		$this->assertFalse( $result['success'] );
+		$this->assertSame( 'Form not found.', $result['message'] );
+	}
 }
