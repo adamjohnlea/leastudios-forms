@@ -43,6 +43,7 @@ class EntryRepositoryTest extends TestCase {
 	public function test_create_truncates_user_agent_to_255_chars(): void {
 		$id  = $this->repo->create( 1, [], null, str_repeat( 'x', 400 ), null );
 		$row = $this->repo->get_entry( $id );
+		$this->assertNotNull( $row, 'Entry should exist after create().' );
 
 		$this->assertSame( 255, mb_strlen( $row->user_agent ) );
 	}
@@ -95,20 +96,26 @@ class EntryRepositoryTest extends TestCase {
 	}
 
 	public function test_get_total_count_with_and_without_filters(): void {
-		$this->repo->create( 50, [], null, null, null );
+		$read = $this->repo->create( 50, [], null, null, null );
 		$this->repo->create( 50, [], null, null, null );
 		$this->repo->create( 60, [], null, null, null );
+		$this->repo->update_status( $read, Entry_Status::Read->value );
 
 		$this->assertSame( 3, $this->repo->get_total_count() );
 		$this->assertSame( 2, $this->repo->get_total_count( 50 ) );
 		$this->assertSame( 1, $this->repo->get_total_count( 60 ) );
+		$this->assertSame( 1, $this->repo->get_total_count( 50, Entry_Status::Read->value ) );
+		$this->assertSame( 1, $this->repo->get_total_count( 50, Entry_Status::Unread->value ) );
 	}
 
 	public function test_update_status_changes_status(): void {
 		$id = $this->repo->create( 1, [], null, null, null );
 
 		$this->assertTrue( $this->repo->update_status( $id, Entry_Status::Trashed->value ) );
-		$this->assertSame( Entry_Status::Trashed->value, $this->repo->get_entry( $id )->status );
+
+		$row = $this->repo->get_entry( $id );
+		$this->assertNotNull( $row, 'Entry should exist after update_status().' );
+		$this->assertSame( Entry_Status::Trashed->value, $row->status );
 	}
 
 	public function test_update_message_ids_stores_json(): void {
@@ -140,7 +147,7 @@ class EntryRepositoryTest extends TestCase {
 
 		$deleted = $this->repo->delete_old_entries( 30 );
 
-		$this->assertSame( 1, $deleted );
+		$this->assertSame( 1, $deleted, 'delete_old_entries() should remove exactly the one back-dated row.' );
 		$this->assertNull( $this->repo->get_entry( $old ) );
 		$this->assertNotNull( $this->repo->get_entry( $fresh ) );
 	}
