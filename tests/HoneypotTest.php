@@ -36,7 +36,7 @@ class HoneypotTest extends TestCase {
 		$this->assertFalse( $this->honeypot->is_spam( '' ) );
 	}
 
-	public function test_render_outputs_hidden_input(): void {
+	public function test_render_outputs_honeypot_field(): void {
 		$html = $this->honeypot->render();
 
 		$this->assertStringContainsString( 'name="_leastudios_forms_hp"', $html );
