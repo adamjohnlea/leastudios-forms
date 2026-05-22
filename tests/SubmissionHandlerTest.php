@@ -95,6 +95,29 @@ class SubmissionHandlerTest extends TestCase {
 		$this->assertSame( 'Spam detected.', $result['message'] );
 	}
 
+	public function test_rejects_missing_honeypot_field(): void {
+		$form_id = $this->create_form(
+			[
+				[
+					'name' => 'message',
+					'type' => 'text',
+				],
+			]
+		);
+
+		$result = $this->handler->handle(
+			$form_id,
+			[ 'message' => 'Hello' ],
+			null,
+			'203.0.113.6',
+			'PHPUnit',
+			null
+		);
+
+		$this->assertFalse( $result['success'] );
+		$this->assertSame( 'Spam detected.', $result['message'] );
+	}
+
 	public function test_rejects_unknown_form(): void {
 		$result = $this->handler->handle(
 			999999,
@@ -179,13 +202,15 @@ class SubmissionHandlerTest extends TestCase {
 			new Form_Settings( success_message: 'Thanks!' )
 		);
 
-		$fired = false;
+		$hook_args = null;
 
 		add_action(
 			'leastudios_forms_submission_created',
-			function () use ( &$fired ): void {
-				$fired = true;
-			}
+			function ( $entry_id, $hook_form_id, $data ) use ( &$hook_args ): void {
+				$hook_args = [ $entry_id, $hook_form_id, $data ];
+			},
+			10,
+			3
 		);
 
 		$result = $this->handler->handle(
@@ -199,7 +224,11 @@ class SubmissionHandlerTest extends TestCase {
 
 		$this->assertTrue( $result['success'] );
 		$this->assertSame( 'Thanks!', $result['message'] );
-		$this->assertTrue( $fired );
 		$this->assertSame( 1, $this->entry_repo->get_total_count( $form_id ) );
+
+		$this->assertNotNull( $hook_args, 'The leastudios_forms_submission_created action did not fire.' );
+		$this->assertGreaterThan( 0, $hook_args[0] );
+		$this->assertSame( $form_id, $hook_args[1] );
+		$this->assertSame( 'Hello there', $hook_args[2]['message'] );
 	}
 }
