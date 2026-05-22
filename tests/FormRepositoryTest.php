@@ -75,21 +75,46 @@ class FormRepositoryTest extends TestCase {
 	}
 
 	public function test_get_fields_returns_empty_array_for_non_json_meta(): void {
+		global $wpdb;
+
 		$id = $this->make_form();
-		update_post_meta( $id, Form_Post_Type::FIELDS_META_KEY, 'not-json' );
+
+		// Create the meta row, then overwrite it with a non-JSON value via a
+		// direct query. This bypasses the registered sanitize_callback so the
+		// test exercises get_fields()'s own is_array() fallback, not the
+		// meta sanitizer.
+		update_post_meta( $id, Form_Post_Type::FIELDS_META_KEY, '[]' );
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.SlowDBQuery.slow_db_query_meta_value, WordPress.DB.SlowDBQuery.slow_db_query_meta_key
+		$wpdb->update(
+			$wpdb->postmeta,
+			[ 'meta_value' => 'not-json' ],
+			[
+				'post_id'  => $id,
+				'meta_key' => Form_Post_Type::FIELDS_META_KEY,
+			]
+		);
+		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.SlowDBQuery.slow_db_query_meta_value, WordPress.DB.SlowDBQuery.slow_db_query_meta_key
+		wp_cache_delete( $id, 'post_meta' );
 
 		$this->assertSame( [], $this->repo->get_fields( $id ) );
 	}
 
 	public function test_save_and_get_settings_round_trip(): void {
 		$id       = $this->make_form();
-		$settings = new Form_Settings( success_message: 'Done', rate_limit: 9 );
+		$settings = new Form_Settings(
+			success_message: 'Done',
+			honeypot_enabled: false,
+			rate_limit: 9,
+			submit_button_text: 'Go',
+		);
 
 		$this->assertTrue( $this->repo->save_settings( $id, $settings ) );
 
 		$loaded = $this->repo->get_settings( $id );
 		$this->assertSame( 'Done', $loaded->success_message );
+		$this->assertFalse( $loaded->honeypot_enabled );
 		$this->assertSame( 9, $loaded->rate_limit );
+		$this->assertSame( 'Go', $loaded->submit_button_text );
 	}
 
 	public function test_get_settings_returns_defaults_when_unset(): void {
@@ -115,7 +140,8 @@ class FormRepositoryTest extends TestCase {
 			]
 		);
 
-		$forms  = $this->repo->get_all_forms();
+		$forms = $this->repo->get_all_forms();
+		$this->assertCount( 2, $forms, 'Expected exactly the two forms created in this test.' );
 		$titles = wp_list_pluck( $forms, 'post_title' );
 
 		$this->assertContains( 'Apple', $titles );
