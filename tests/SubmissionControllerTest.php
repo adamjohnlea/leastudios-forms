@@ -31,17 +31,20 @@ class SubmissionControllerTest extends TestCase {
 
 	private Form_Repository $form_repo;
 
+	private Entry_Repository $entry_repo;
+
 	public function set_up(): void {
 		parent::set_up();
 
 		$field_registry = new Field_Registry();
 		$field_registry->register_defaults();
 
-		$this->form_repo = new Form_Repository();
+		$this->form_repo  = new Form_Repository();
+		$this->entry_repo = new Entry_Repository();
 
 		$handler = new Submission_Handler(
 			new Validator( $field_registry ),
-			new Entry_Repository(),
+			$this->entry_repo,
 			new Email_Notifier(),
 			new Honeypot(),
 			new Rate_Limiter(),
@@ -61,8 +64,9 @@ class SubmissionControllerTest extends TestCase {
 	private function create_form( array $fields ): int {
 		$form_id = self::factory()->post->create(
 			[
-				'post_type'  => 'leastudios_form',
-				'post_title' => 'REST Test Form',
+				'post_type'   => 'leastudios_form',
+				'post_title'  => 'REST Test Form',
+				'post_status' => 'publish',
 			]
 		);
 
@@ -89,6 +93,15 @@ class SubmissionControllerTest extends TestCase {
 		$this->assertTrue(
 			$this->controller->create_item_permissions_check( $this->make_request( [] ) )
 		);
+	}
+
+	public function test_register_routes_registers_the_submissions_route(): void {
+		add_action( 'rest_api_init', [ $this->controller, 'register_routes' ] );
+		do_action( 'rest_api_init' );
+
+		$routes = rest_get_server()->get_routes();
+
+		$this->assertArrayHasKey( '/leastudios-forms/v1/submissions', $routes );
 	}
 
 	public function test_rejects_missing_nonce_with_403(): void {
@@ -137,6 +150,7 @@ class SubmissionControllerTest extends TestCase {
 		);
 
 		$this->assertSame( 403, $response->get_status() );
+		$this->assertFalse( $response->get_data()['success'] );
 	}
 
 	public function test_returns_200_on_successful_submission(): void {
@@ -162,6 +176,7 @@ class SubmissionControllerTest extends TestCase {
 
 		$this->assertSame( 200, $response->get_status() );
 		$this->assertTrue( $response->get_data()['success'] );
+		$this->assertSame( 1, $this->entry_repo->get_total_count( $form_id ), 'A successful submission should persist exactly one entry.' );
 	}
 
 	public function test_returns_422_on_validation_failure(): void {
@@ -213,6 +228,7 @@ class SubmissionControllerTest extends TestCase {
 		);
 
 		$this->assertSame( 422, $response->get_status() );
+		$this->assertFalse( $response->get_data()['success'] );
 		$this->assertSame( 'Spam detected.', $response->get_data()['message'] );
 	}
 }
