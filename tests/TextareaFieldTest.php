@@ -36,6 +36,10 @@ class TextareaFieldTest extends TestCase {
 		$this->assertSame( 'hello', $this->field->sanitize( ' hello ' ) );
 	}
 
+	public function test_sanitize_preserves_newlines(): void {
+		$this->assertStringContainsString( "\n", $this->field->sanitize( "line1\nline2" ) );
+	}
+
 	public function test_validate_required_rejects_empty(): void {
 		$this->assertIsString(
 			$this->field->validate(
@@ -62,5 +66,6 @@ class TextareaFieldTest extends TestCase {
 		);
 
 		$this->assertStringContainsString( '<textarea', $html );
+		$this->assertStringContainsString( 'name="fieldname"', $html );
 	}
 }

@@ -59,6 +59,10 @@ class AddressFieldTest extends TestCase {
 		$this->assertTrue( $this->field->validate( 'anything', [] ) );
 	}
 
+	public function test_validate_required_rejects_non_array_value(): void {
+		$this->assertIsString( $this->field->validate( 'garbage', [ 'required' => true ] ) );
+	}
+
 	public function test_validate_required_rejects_incomplete_address(): void {
 		$value = [
 			'line1'   => '10 Main St',

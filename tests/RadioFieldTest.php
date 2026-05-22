@@ -85,5 +85,6 @@ class RadioFieldTest extends TestCase {
 		);
 
 		$this->assertStringContainsString( 'type="radio"', $html );
+		$this->assertStringContainsString( 'name="fieldname"', $html );
 	}
 }

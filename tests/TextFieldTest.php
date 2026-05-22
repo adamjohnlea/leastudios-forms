@@ -80,5 +80,6 @@ class TextFieldTest extends TestCase {
 		);
 
 		$this->assertStringContainsString( 'type="text"', $html );
+		$this->assertStringContainsString( 'name="fieldname"', $html );
 	}
 }

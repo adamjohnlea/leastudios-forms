@@ -85,5 +85,6 @@ class SelectFieldTest extends TestCase {
 		);
 
 		$this->assertStringContainsString( '<select', $html );
+		$this->assertStringContainsString( 'name="fieldname"', $html );
 	}
 }

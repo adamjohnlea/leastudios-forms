@@ -46,7 +46,7 @@ class CheckboxFieldTest extends TestCase {
 	}
 
 	public function test_sanitize_array_returns_array(): void {
-		$this->assertIsArray( $this->field->sanitize( [ 'a', 'b' ] ) );
+		$this->assertSame( [ 'a', 'b' ], $this->field->sanitize( [ '<b>a</b>', 'b' ] ) );
 	}
 
 	public function test_sanitize_string_returns_string(): void {

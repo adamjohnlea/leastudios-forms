@@ -69,5 +69,6 @@ class NumberFieldTest extends TestCase {
 			]
 		);
 		$this->assertStringContainsString( 'type="number"', $html );
+		$this->assertStringContainsString( 'name="qty"', $html );
 	}
 }

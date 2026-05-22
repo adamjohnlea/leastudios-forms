@@ -33,9 +33,7 @@ class HiddenFieldTest extends TestCase {
 	}
 
 	public function test_sanitize_strips_html_tags(): void {
-		$result = $this->field->sanitize( '<b>x</b>' );
-
-		$this->assertStringNotContainsString( '<b>', $result );
+		$this->assertSame( 'x', $this->field->sanitize( '<b>x</b>' ) );
 	}
 
 	public function test_validate_required_rejects_empty(): void {
@@ -64,5 +62,6 @@ class HiddenFieldTest extends TestCase {
 		);
 
 		$this->assertStringContainsString( 'type="hidden"', $html );
+		$this->assertStringContainsString( 'name="fieldname"', $html );
 	}
 }

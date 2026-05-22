@@ -32,8 +32,8 @@ class PhoneFieldTest extends TestCase {
 		$this->assertNotEmpty( $this->field->get_label() );
 	}
 
-	public function test_sanitize_trims_whitespace(): void {
-		$this->assertSame( '555-1234', $this->field->sanitize( '  555-1234 ' ) );
+	public function test_sanitize_preserves_valid_phone_characters(): void {
+		$this->assertSame( '+1 (555) 123-4567', $this->field->sanitize( '+1 (555) 123-4567' ) );
 	}
 
 	public function test_validate_required_rejects_empty(): void {
@@ -76,5 +76,6 @@ class PhoneFieldTest extends TestCase {
 		);
 
 		$this->assertStringContainsString( 'type="tel"', $html );
+		$this->assertStringContainsString( 'name="fieldname"', $html );
 	}
 }

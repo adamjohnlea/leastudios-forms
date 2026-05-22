@@ -70,5 +70,6 @@ class UrlFieldTest extends TestCase {
 		);
 
 		$this->assertStringContainsString( 'type="url"', $html );
+		$this->assertStringContainsString( 'name="fieldname"', $html );
 	}
 }
