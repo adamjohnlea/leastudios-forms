@@ -108,4 +108,38 @@ class SubmissionHandlerTest extends TestCase {
 		$this->assertFalse( $result['success'] );
 		$this->assertSame( 'Form not found.', $result['message'] );
 	}
+
+	public function test_rejects_over_rate_limit(): void {
+		$form_id = $this->create_form(
+			[
+				[
+					'name' => 'message',
+					'type' => 'text',
+				],
+			],
+			new Form_Settings( rate_limit: 1 )
+		);
+
+		$first = $this->handler->handle(
+			$form_id,
+			[ 'message' => 'Hello' ],
+			'',
+			'203.0.113.3',
+			'PHPUnit',
+			null
+		);
+
+		$second = $this->handler->handle(
+			$form_id,
+			[ 'message' => 'Hello' ],
+			'',
+			'203.0.113.3',
+			'PHPUnit',
+			null
+		);
+
+		$this->assertTrue( $first['success'] );
+		$this->assertFalse( $second['success'] );
+		$this->assertSame( 'Too many submissions. Please try again later.', $second['message'] );
+	}
 }
