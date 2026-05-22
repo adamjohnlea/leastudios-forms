@@ -142,4 +142,29 @@ class SubmissionHandlerTest extends TestCase {
 		$this->assertFalse( $second['success'] );
 		$this->assertSame( 'Too many submissions. Please try again later.', $second['message'] );
 	}
+
+	public function test_returns_validation_errors(): void {
+		$form_id = $this->create_form(
+			[
+				[
+					'name'     => 'email',
+					'type'     => 'email',
+					'label'    => 'Email',
+					'required' => true,
+				],
+			]
+		);
+
+		$result = $this->handler->handle(
+			$form_id,
+			[ 'email' => '' ],
+			'',
+			'203.0.113.4',
+			'PHPUnit',
+			null
+		);
+
+		$this->assertFalse( $result['success'] );
+		$this->assertArrayHasKey( 'email', $result['errors'] );
+	}
 }
