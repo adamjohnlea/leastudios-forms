@@ -4,7 +4,7 @@ Tags: forms, contact form, form builder, email notifications, submissions
 Requires at least: 6.4
 Tested up to: 6.9
 Requires PHP: 8.2
-Stable tag: 1.0.2
+Stable tag: 1.0.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -46,6 +46,9 @@ Yes. Each form can have multiple notification emails configured with customisabl
 Not currently. The plugin focuses on text-based form fields.
 
 == Changelog ==
+
+= 1.0.3 =
+* Fix: Required-field validation no longer rejects valid submissions when a field name contains uppercase letters, spaces, or other characters that `sanitize_key()` alters. Field names are now normalized once at save time so the renderer, JavaScript payload, submission handler, and validator all key data identically.
 
 = 1.0.2 =
 * Internal: expanded unit test coverage across field types, repositories, REST controller, render, admin, and integrations. No user-facing changes.

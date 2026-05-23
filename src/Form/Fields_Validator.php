@@ -71,9 +71,18 @@ final class Fields_Validator {
 	 * @return array<string, mixed> The normalized field config.
 	 */
 	private function normalize_field( array $field ): array {
-		$field['id']          = (string) $field['id'];
-		$field['type']        = (string) $field['type'];
-		$field['name']        = (string) ( $field['name'] ?? $field['id'] );
+		$field['id']   = (string) $field['id'];
+		$field['type'] = (string) $field['type'];
+
+		// Submission_Handler keys the sanitized payload by sanitize_key( name ),
+		// while Validator looks up the raw name. If the stored name carries
+		// characters sanitize_key strips (uppercase, spaces, punctuation), the
+		// two paths disagree and every required field reads as empty. Normalize
+		// once on save so every downstream consumer sees the same key.
+		$raw_name      = (string) ( $field['name'] ?? $field['id'] );
+		$sanitized     = sanitize_key( $raw_name );
+		$field['name'] = '' !== $sanitized ? $sanitized : sanitize_key( $field['id'] );
+
 		$field['label']       = (string) ( $field['label'] ?? '' );
 		$field['placeholder'] = (string) ( $field['placeholder'] ?? '' );
 		$field['required']    = ! empty( $field['required'] );

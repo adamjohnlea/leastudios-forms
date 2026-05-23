@@ -152,4 +152,32 @@ class FieldsValidatorTest extends TestCase {
 
 		$this->assertSame( 'phone_number', $result[0]['name'] );
 	}
+
+	public function test_normalizes_name_so_lookup_keys_match_downstream(): void {
+		// Names round-trip through sanitize_key() in Submission_Handler when
+		// building the sanitized payload, but Validator looks up the raw
+		// $field_config['name']. If a stored name contains uppercase or
+		// other characters that sanitize_key alters, the two paths key the
+		// data differently and every required field reports as empty.
+		// Normalizing here guarantees the stored name is already a safe key.
+		$result = $this->validator->validate(
+			[
+				[
+					'id'   => 'f1',
+					'type' => 'text',
+					'name' => 'First Name',
+				],
+				[
+					'id'   => 'f2',
+					'type' => 'email',
+					'name' => 'EMAIL',
+				],
+			]
+		);
+
+		// sanitize_key() lowercases and strips anything outside [a-z0-9_-];
+		// the inner space in "First Name" is dropped.
+		$this->assertSame( 'firstname', $result[0]['name'] );
+		$this->assertSame( 'email', $result[1]['name'] );
+	}
 }
