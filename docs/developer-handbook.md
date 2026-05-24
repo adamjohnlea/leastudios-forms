@@ -1159,7 +1159,7 @@ validate, and render logic.
 **Hooks used:** `leastudios_forms_field_types`.
 
 **Walkthrough:** Implement the `LEAStudios\Forms\Field\Field_Type` interface in your own
-plugin. The four required methods are `get_type()` (slug), `get_label()` (display name),
+plugin. The five required methods are `get_type()` (slug), `get_label()` (display name),
 `sanitize()` (clean the raw value), `validate()` (return `true` or an error string), and
 `render()` (produce the HTML input). Hook `leastudios_forms_field_types` at file scope
 so your class is registered before the form editor renders its field list.
