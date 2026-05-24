@@ -4,7 +4,7 @@ Tags: forms, contact form, form builder, email notifications, submissions
 Requires at least: 6.4
 Tested up to: 7.0
 Requires PHP: 8.2
-Stable tag: 1.0.5
+Stable tag: 1.0.6
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -46,6 +46,19 @@ Yes. Each form can have multiple notification emails configured with customisabl
 Not currently. The plugin focuses on text-based form fields.
 
 == Changelog ==
+
+= 1.0.6 — 2026-05-24 =
+
+* Changed: hardened SQL construction across the plugin for Plugin Check compliance — `Entry_Repository::get_entries` and `get_total_count` now enumerate filter branches as static `$wpdb->prepare()` strings rather than concatenating interpolated `$where_clause` fragments. Table-name interpolations converted to the `%i` placeholder (WordPress 6.2+).
+* Internal: new `composer lint:db` tripwire (shared across the suite) blocks variable interpolation in `$wpdb` query construction; Plugin Check is now run against the release zip in CI to catch regressions before tag.
+* Docs: developer handbook upgraded to canonical shape.
+
+= 1.0.5 =
+* Fix: derive `VERSION` constant from the plugin header so the runtime constant can never drift from the release-zip version.
+
+= 1.0.4 =
+* Fix: declare compatibility with WordPress 7.0.
+* Internal: tag-triggered release workflow with auto-generated notes; CI hardening (gitleaks secret scan, dependency bumps).
 
 = 1.0.3 =
 * Fix: Required-field validation no longer rejects valid submissions when a field name contains uppercase letters, spaces, or other characters that `sanitize_key()` alters. Field names are now normalized once at save time so the renderer, JavaScript payload, submission handler, and validator all key data identically.
