@@ -1,0 +1,13 @@
+# Files exempted from the DB-interpolation tripwire (bin/check-db-interpolation.sh).
+# Each line is a path relative to the plugin root.
+#
+# Every exemption MUST be paired with an inline rationale comment at the call site.
+# See ../leastudios-dev-tools/CLAUDE.md > Database for the underlying rule.
+
+# Entry_Repository: WHERE clauses built from a filter-key allowlist plus dynamic
+# IN (%s, %s, ...) placeholder lists. Table goes through %i; values via %s/%d.
+src/Entry/Entry_Repository.php
+
+# Mailer_Integration: dynamic IN (%s, ...) placeholder list for message ids.
+# Table goes through %i.
+src/Integration/Mailer_Integration.php
