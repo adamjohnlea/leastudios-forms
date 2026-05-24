@@ -89,33 +89,59 @@ class Entry_Repository {
 		global $wpdb;
 
 		$table  = Migration::get_table_name();
-		$where  = [];
-		$values = [];
+		$offset = ( $page - 1 ) * $per_page;
+
+		// Each filter combination is enumerated as a fully-static prepare() format string so the
+		// WHERE fragment is never interpolated, satisfying Plugin Check's stricter DB-interpolation sniff.
+		if ( null !== $form_id && null !== $status ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			return $wpdb->get_results(
+				$wpdb->prepare(
+					'SELECT * FROM %i WHERE form_id = %d AND status = %s ORDER BY created_at DESC LIMIT %d OFFSET %d',
+					$table,
+					$form_id,
+					$status,
+					$per_page,
+					$offset
+				)
+			);
+		}
 
 		if ( null !== $form_id ) {
-			$where[]  = 'form_id = %d';
-			$values[] = $form_id;
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			return $wpdb->get_results(
+				$wpdb->prepare(
+					'SELECT * FROM %i WHERE form_id = %d ORDER BY created_at DESC LIMIT %d OFFSET %d',
+					$table,
+					$form_id,
+					$per_page,
+					$offset
+				)
+			);
 		}
 
 		if ( null !== $status ) {
-			$where[]  = 'status = %s';
-			$values[] = $status;
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			return $wpdb->get_results(
+				$wpdb->prepare(
+					'SELECT * FROM %i WHERE status = %s ORDER BY created_at DESC LIMIT %d OFFSET %d',
+					$table,
+					$status,
+					$per_page,
+					$offset
+				)
+			);
 		}
 
-		$where_clause = ! empty( $where ) ? 'WHERE ' . implode( ' AND ', $where ) : '';
-		$offset       = ( $page - 1 ) * $per_page;
-		array_unshift( $values, $table );
-		$values[] = $per_page;
-		$values[] = $offset;
-
-		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare --$where_clause carries 0/1/2 dynamic placeholders, $values matches.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		return $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT * FROM %i {$where_clause} ORDER BY created_at DESC LIMIT %d OFFSET %d",
-				...$values
+				'SELECT * FROM %i ORDER BY created_at DESC LIMIT %d OFFSET %d',
+				$table,
+				$per_page,
+				$offset
 			)
 		);
-		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
 	}
 
 	/**
@@ -128,36 +154,46 @@ class Entry_Repository {
 	public function get_total_count( ?int $form_id = null, ?string $status = null ): int {
 		global $wpdb;
 
-		$table  = Migration::get_table_name();
-		$where  = [];
-		$values = [];
+		$table = Migration::get_table_name();
+
+		// Each filter combination is enumerated as a fully-static prepare() format string so the
+		// WHERE fragment is never interpolated, satisfying Plugin Check's stricter DB-interpolation sniff.
+		if ( null !== $form_id && null !== $status ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			return (int) $wpdb->get_var(
+				$wpdb->prepare(
+					'SELECT COUNT(*) FROM %i WHERE form_id = %d AND status = %s',
+					$table,
+					$form_id,
+					$status
+				)
+			);
+		}
 
 		if ( null !== $form_id ) {
-			$where[]  = 'form_id = %d';
-			$values[] = $form_id;
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			return (int) $wpdb->get_var(
+				$wpdb->prepare(
+					'SELECT COUNT(*) FROM %i WHERE form_id = %d',
+					$table,
+					$form_id
+				)
+			);
 		}
 
 		if ( null !== $status ) {
-			$where[]  = 'status = %s';
-			$values[] = $status;
-		}
-
-		$where_clause = ! empty( $where ) ? 'WHERE ' . implode( ' AND ', $where ) : '';
-
-		if ( ! empty( $values ) ) {
-			array_unshift( $values, $table );
-			// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare --$where_clause carries 1+ dynamic placeholders, $values matches.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			return (int) $wpdb->get_var(
 				$wpdb->prepare(
-					"SELECT COUNT(*) FROM %i {$where_clause}",
-					...$values
+					'SELECT COUNT(*) FROM %i WHERE status = %s',
+					$table,
+					$status
 				)
 			);
-			// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
 		}
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-		return (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM %i WHERE 1 = %d', $table, 1 ) );
+		return (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM %i', $table ) );
 	}
 
 	/**
