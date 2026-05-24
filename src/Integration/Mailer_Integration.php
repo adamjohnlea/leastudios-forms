@@ -63,12 +63,13 @@ class Mailer_Integration {
 
 		$table        = $wpdb->prefix . 'leastudios_mailer_log';
 		$placeholders = implode( ', ', array_fill( 0, count( $message_ids ), '%s' ) );
+		$args         = array_merge( [ $table ], $message_ids );
 
 		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- $placeholders contains N '%s' tokens matching count($message_ids).
 		$results = $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT message_id, status, error_message FROM {$table} WHERE message_id IN ( {$placeholders} )",
-				...$message_ids
+				"SELECT message_id, status, error_message FROM %i WHERE message_id IN ( {$placeholders} )",
+				...$args
 			),
 			ARRAY_A
 		);
