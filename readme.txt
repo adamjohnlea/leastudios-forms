@@ -2,7 +2,7 @@
 Contributors: leastudios
 Tags: forms, contact form, form builder, email notifications, submissions
 Requires at least: 6.4
-Tested up to: 6.9
+Tested up to: 7.0
 Requires PHP: 8.2
 Stable tag: 1.0.3
 License: GPLv2 or later
