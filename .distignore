@@ -4,8 +4,10 @@
 /tests
 .distignore
 .gitignore
+CLAUDE.md
 composer.json
 composer.lock
 phpcs.xml.dist
+phpstan-bootstrap.php
 phpstan.neon
 phpunit.xml.dist
