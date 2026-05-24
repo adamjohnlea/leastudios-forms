@@ -3,7 +3,7 @@
  * Plugin Name:       leaStudios Forms
  * Plugin URI:        https://leastudios.com/plugins/leastudios-forms
  * Description:       Lightweight form builder for WordPress. Create contact forms, feedback forms, and more with an intuitive drag-and-drop builder.
- * Version:           1.0.4
+ * Version:           1.0.5
  * Requires at least: 6.4
  * Requires PHP:      8.2
  * Author:            leaStudios
@@ -20,7 +20,12 @@ declare(strict_types=1);
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'LEASTUDIOS_FORMS_VERSION', '1.0.3' );
+// Derive the version from the plugin header so the runtime constant can
+// never drift from the version shipped in the release zip.
+define(
+	'LEASTUDIOS_FORMS_VERSION',
+	get_file_data( __FILE__, [ 'Version' => 'Version' ] )['Version']
+);
 define( 'LEASTUDIOS_FORMS_FILE', __FILE__ );
 define( 'LEASTUDIOS_FORMS_DIR', plugin_dir_path( __FILE__ ) );
 define( 'LEASTUDIOS_FORMS_URL', plugin_dir_url( __FILE__ ) );
