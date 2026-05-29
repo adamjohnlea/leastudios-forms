@@ -19,32 +19,14 @@ class MailerIntegrationTest extends TestCase {
 
 	private Mailer_Integration $integration;
 
-	private string $log_table;
-
 	public function set_up(): void {
 		parent::set_up();
-
-		global $wpdb;
-		$this->log_table = $wpdb->prefix . 'leastudios_mailer_log';
-
-		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		$wpdb->query( "DROP TABLE IF EXISTS {$this->log_table}" );
-		$wpdb->query(
-			"CREATE TABLE {$this->log_table} (
-				message_id VARCHAR(255) NOT NULL,
-				status VARCHAR(50) NOT NULL,
-				error_message TEXT NULL
-			)"
-		);
-		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
 		$this->integration = new Mailer_Integration();
 	}
 
 	public function tear_down(): void {
-		global $wpdb;
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		$wpdb->query( "DROP TABLE IF EXISTS {$this->log_table}" );
+		remove_all_filters( 'leastudios_mailer_delivery_status' );
 
 		unset( $GLOBALS['current_screen'] );
 
@@ -64,6 +46,7 @@ class MailerIntegrationTest extends TestCase {
 		$this->integration->init();
 
 		$this->assertFalse( $fired );
+		$this->assertFalse( has_filter( 'leastudios_forms_delivery_status' ) );
 	}
 
 	public function test_init_fires_action_in_admin_with_self_as_argument(): void {
@@ -81,71 +64,57 @@ class MailerIntegrationTest extends TestCase {
 		$this->assertSame( $this->integration, $received );
 	}
 
-	public function test_get_delivery_statuses_returns_empty_for_empty_input(): void {
-		$this->assertSame( [], $this->integration->get_delivery_statuses( [] ) );
+	public function test_init_registers_the_forms_delivery_status_filter_in_admin(): void {
+		set_current_screen( 'dashboard' );
+
+		$this->integration->init();
+
+		$this->assertNotFalse( has_filter( 'leastudios_forms_delivery_status', [ $this->integration, 'filter_delivery_status' ] ) );
 	}
 
-	public function test_get_delivery_statuses_returns_normalized_rows(): void {
-		global $wpdb;
-		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-		$wpdb->insert(
-			$this->log_table,
-			[
-				'message_id'    => 'ses-aaa',
-				'status'        => 'delivered',
-				'error_message' => '',
-			]
+	public function test_filter_delivery_status_renders_badge_from_mailer_lookup(): void {
+		// Stand in for the mailer answering its own public lookup filter.
+		add_filter(
+			'leastudios_mailer_delivery_status',
+			static function ( $status, string $message_id ) {
+				if ( 'ses-aaa' === $message_id ) {
+					return [
+						'status'        => 'delivered',
+						'error_message' => '',
+					];
+				}
+
+				return $status;
+			},
+			10,
+			2
 		);
-		$wpdb->insert(
-			$this->log_table,
-			[
-				'message_id'    => 'ses-bbb',
-				'status'        => 'failed',
-				'error_message' => 'recipient invalid',
-			]
-		);
-		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 
-		$rows = $this->integration->get_delivery_statuses( [ 'ses-aaa', 'ses-bbb' ] );
+		$html = $this->integration->filter_delivery_status( 'Sent', 'ses-aaa' );
 
-		$this->assertCount( 2, $rows );
-
-		$by_id = [];
-		foreach ( $rows as $row ) {
-			$by_id[ $row['message_id'] ] = $row;
-		}
-
-		$this->assertSame( 'delivered', $by_id['ses-aaa']['status'] );
-		$this->assertSame( '', $by_id['ses-aaa']['error_message'] );
-		$this->assertSame( 'failed', $by_id['ses-bbb']['status'] );
-		$this->assertSame( 'recipient invalid', $by_id['ses-bbb']['error_message'] );
+		$this->assertStringContainsString( '#00a32a', $html );
+		$this->assertStringContainsString( '>Delivered<', $html );
 	}
 
-	public function test_get_delivery_statuses_filters_by_supplied_message_ids(): void {
-		global $wpdb;
-		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-		$wpdb->insert(
-			$this->log_table,
-			[
-				'message_id'    => 'ses-known',
-				'status'        => 'sent',
-				'error_message' => '',
-			]
+	public function test_filter_delivery_status_returns_default_when_message_unknown(): void {
+		// Mailer answers but does not recognise this message ID.
+		add_filter(
+			'leastudios_mailer_delivery_status',
+			static fn( $status ) => $status,
+			10,
+			2
 		);
-		$wpdb->insert(
-			$this->log_table,
-			[
-				'message_id'    => 'ses-other',
-				'status'        => 'delivered',
-				'error_message' => '',
-			]
-		);
-		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 
-		$rows = $this->integration->get_delivery_statuses( [ 'ses-known', 'ses-missing' ] );
+		$html = $this->integration->filter_delivery_status( 'Sent', 'ses-missing' );
 
-		$this->assertCount( 1, $rows );
-		$this->assertSame( 'ses-known', $rows[0]['message_id'] );
+		$this->assertSame( 'Sent', $html );
+	}
+
+	public function test_filter_delivery_status_returns_default_when_mailer_absent(): void {
+		// No mailer filter registered at all (sibling plugin inactive path).
+		$html = $this->integration->filter_delivery_status( 'Sent', 'ses-anything' );
+
+		$this->assertSame( 'Sent', $html );
 	}
 
 	public function test_render_status_badge_uses_status_specific_colour(): void {

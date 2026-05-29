@@ -378,7 +378,7 @@ class Entries_Page {
 	 * @return void
 	 */
 	private function maybe_render_delivery_status( object $entry ): void {
-		if ( ! class_exists( '\LEAStudios\Suite\Suite_Detector' ) ) {
+		if ( ! \LEAStudios\Forms\Suite\Suite_Detector::is_active( 'leastudios-mailer' ) ) {
 			return;
 		}
 
@@ -410,10 +410,16 @@ class Entries_Page {
 							/**
 							 * Filter the delivery status display for a message ID.
 							 *
+							 * Filters return either a plain status string or safe
+							 * status-badge HTML (see Mailer_Integration), so the
+							 * value is passed through wp_kses_post rather than
+							 * esc_html to allow the badge markup while still
+							 * escaping any plain-text default.
+							 *
 							 * @param string $status     The status display string.
 							 * @param string $message_id The notification message ID.
 							 */
-							echo esc_html(
+							echo wp_kses_post(
 								(string) apply_filters(
 									'leastudios_forms_delivery_status',
 									__( 'Sent', 'leastudios-forms' ),

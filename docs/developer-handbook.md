@@ -773,28 +773,27 @@ add_action( 'leastudios_forms_notification_sent', function ( int $entry_id, int 
 - **Type:** Filter
 - **Location:** `src/Admin/Entries_Page.php`
 - **Since:** 1.0.0
-- **Description:** Filters the delivery status display string for a notification message ID. This is used in the entry detail view's "Notification Delivery Status" section. The Mailer Integration plugin hooks into this to provide real-time delivery statuses.
+- **Description:** Filters the delivery status display for a notification message ID. This is used in the entry detail view's "Notification Delivery Status" section, where its return value is output through `wp_kses_post()` — so a callback may return either a plain status string or safe status-badge HTML. When `leastudios-mailer` is active, `Integration\Mailer_Integration` answers this filter by looking the message up through the mailer's public `leastudios_mailer_delivery_status` filter (it never queries the mailer's table) and returns a coloured badge.
 
 **Parameters:**
 
 | Parameter     | Type     | Description                       |
 |---------------|----------|-----------------------------------|
-| `$status`     | `string` | The status display string.        |
-| `$message_id` | `string` | The notification message ID.      |
+| `$status`     | `string` | The default status display string (defaults to "Sent"). |
+| `$message_id` | `string` | The notification (SES) message ID.|
 
-**Returns:** `string` — The filtered status string.
+**Returns:** `string` — The filtered status string, optionally as safe badge HTML.
 
 **Example:**
 
 ```php
 add_filter( 'leastudios_forms_delivery_status', function ( string $status, string $message_id ): string {
-    // Look up delivery status from a custom tracking table.
-    global $wpdb;
-    $result = $wpdb->get_var( $wpdb->prepare(
-        "SELECT status FROM {$wpdb->prefix}email_tracking WHERE message_id = %s",
-        $message_id
-    ) );
-    return $result ? ucfirst( $result ) : $status;
+    // Ask the mailer (or any tracker) for this message's delivery status.
+    $result = apply_filters( 'leastudios_mailer_delivery_status', null, $message_id );
+
+    return is_array( $result ) && '' !== $result['status']
+        ? ucfirst( $result['status'] )
+        : $status;
 }, 10, 2 );
 ```
 
@@ -942,16 +941,18 @@ add_action( 'leastudios_forms_field_types', function ( \LEAStudios\Forms\Field\F
 
 ```php
 add_action( 'leastudios_forms_mailer_integration_init', function ( $integration ): void {
-    // Hook into the delivery status filter using data from the mailer integration.
-    add_filter( 'leastudios_forms_delivery_status', function ( string $status, string $message_id ) use ( $integration ): string {
-        $statuses = $integration->get_delivery_statuses( [ $message_id ] );
+    // The integration already registers its own `leastudios_forms_delivery_status`
+    // handler. Use this action only to extend or adjust that behaviour, e.g. to
+    // render a custom badge from the mailer's public status lookup.
+    add_filter( 'leastudios_forms_delivery_status', function ( string $status, string $message_id ): string {
+        $result = apply_filters( 'leastudios_mailer_delivery_status', null, $message_id );
 
-        if ( ! empty( $statuses[0]['status'] ) ) {
-            return $integration::render_status_badge( $statuses[0]['status'] );
+        if ( is_array( $result ) && '' !== $result['status'] ) {
+            return \LEAStudios\Forms\Integration\Mailer_Integration::render_status_badge( $result['status'] );
         }
 
         return $status;
-    }, 10, 2 );
+    }, 20, 2 );
 } );
 ```
 

@@ -14,6 +14,11 @@ defined( 'ABSPATH' ) || exit;
 
 /**
  * Provides delivery status lookups and display for the leaStudios Mailer plugin.
+ *
+ * The actual delivery data lives in the mailer's own log table. This class
+ * never touches that table directly — it asks the mailer for a message's
+ * status through the public `leastudios_mailer_delivery_status` filter and
+ * renders the answer as a coloured badge in the forms entry detail view.
  */
 class Mailer_Integration {
 
@@ -40,6 +45,8 @@ class Mailer_Integration {
 			return;
 		}
 
+		add_filter( 'leastudios_forms_delivery_status', [ $this, 'filter_delivery_status' ], 10, 2 );
+
 		/**
 		 * Fires when the mailer integration is initialised.
 		 *
@@ -49,46 +56,36 @@ class Mailer_Integration {
 	}
 
 	/**
-	 * Get delivery statuses for a set of SES message IDs.
+	 * Answer the forms delivery-status filter using the mailer's public lookup.
 	 *
-	 * @param array<int, string> $message_ids List of SES message IDs to look up.
-	 * @return array<int, array{message_id: string, status: string, error_message: string}> Status rows from the mailer log.
+	 * Looks the message up via the mailer's `leastudios_mailer_delivery_status`
+	 * filter (the only supported cross-plugin read path into the mailer log)
+	 * and, when a status is known, returns a coloured badge. When the message
+	 * is unknown the unchanged default string is returned so the entry view
+	 * still shows something sensible.
+	 *
+	 * @param string $status     The default status display string.
+	 * @param string $message_id The notification (SES) message ID.
+	 * @return string The status display string, as badge HTML when resolvable.
 	 */
-	public function get_delivery_statuses( array $message_ids ): array {
-		if ( empty( $message_ids ) ) {
-			return [];
+	public function filter_delivery_status( string $status, string $message_id ): string {
+		/**
+		 * Ask the mailer for this message's delivery status.
+		 *
+		 * The mailer answers with an array `['status' => string, 'error_message' => string]`
+		 * when the message ID is known, or returns the passed-through default
+		 * (here `null`) when it is not.
+		 *
+		 * @param array{status: string, error_message: string}|null $result     Status row, or null default.
+		 * @param string                                             $message_id The SES message ID to look up.
+		 */
+		$result = apply_filters( 'leastudios_mailer_delivery_status', null, $message_id );
+
+		if ( is_array( $result ) && ! empty( $result['status'] ) ) {
+			return self::render_status_badge( (string) $result['status'] );
 		}
 
-		global $wpdb;
-
-		$table        = $wpdb->prefix . 'leastudios_mailer_log';
-		$placeholders = implode( ', ', array_fill( 0, count( $message_ids ), '%s' ) );
-		$args         = array_merge( [ $table ], $message_ids );
-
-		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- $placeholders contains N '%s' tokens matching count($message_ids).
-		$results = $wpdb->get_results(
-			$wpdb->prepare(
-				"SELECT message_id, status, error_message FROM %i WHERE message_id IN ( {$placeholders} )",
-				...$args
-			),
-			ARRAY_A
-		);
-		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
-
-		if ( ! is_array( $results ) ) {
-			return [];
-		}
-
-		return array_map(
-			static function ( array $row ): array {
-				return [
-					'message_id'    => $row['message_id'] ?? '',
-					'status'        => $row['status'] ?? '',
-					'error_message' => $row['error_message'] ?? '',
-				];
-			},
-			$results
-		);
+		return $status;
 	}
 
 	/**
