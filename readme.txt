@@ -4,7 +4,7 @@ Tags: forms, contact form, form builder, email notifications, submissions
 Requires at least: 6.4
 Tested up to: 7.0
 Requires PHP: 8.2
-Stable tag: 1.0.6
+Stable tag: 1.0.7
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -46,6 +46,11 @@ Yes. Each form can have multiple notification emails configured with customisabl
 Not currently. The plugin focuses on text-based form fields.
 
 == Changelog ==
+
+= 1.0.7 — 2026-05-29 =
+
+* Fixed: email delivery status now renders in the entry detail view — the visibility check referenced a class that does not exist, so the status badge was never shown even when leaStudios Mailer was active.
+* Changed: delivery status is now read through the mailer's public `leastudios_mailer_delivery_status` filter instead of querying the mailer's log table directly, removing the cross-plugin database access.
 
 = 1.0.6 — 2026-05-24 =
 
